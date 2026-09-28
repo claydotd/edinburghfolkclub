@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "name": "Scottish Storytelling Centre",
+      "blurb": "Home to storytelling and traditional arts events in Edinburgh’s Old Town.",
+      "url": "https://www.scottishstorytellingcentre.com/"
+    },
+    {
+      "name": "TradFest",
+      "blurb": "Edinburgh’s celebration of traditional arts — music, song, dance and storytelling.",
+      "url": "https://www.tracscotland.org/tradfest/"
+    },
+    {
+      "name": "Hands Up for Trad",
+      "blurb": "News, awards and advocacy for Scotland’s traditional music scene.",
+      "url": "https://project.handsupfortrad.scot/"
+    }
+  ]
+}

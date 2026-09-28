@@ -1,87 +1,58 @@
-# Welcome to React Router!
+# Edinburgh Folk Club
 
-A modern, production-ready template for building full-stack React applications using React Router.
+Static React + Vite prototype for layout and content. Hosted on GitHub Pages in Phase 1; forms and membership are UI stubs ready for a Netlify backend in Phase 2.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
-
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
-
-### Installation
-
-Install the dependencies:
+## Scripts
 
 ```bash
 npm install
+npm run dev      # local development
+npm run build    # production build → dist/
+npm run preview  # preview the production build
 ```
 
-### Development
+## Deploy (GitHub Actions → GitHub Pages)
 
-Start the development server with HMR:
+Deploys happen automatically via [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) on every push to `main` (or manually from the Actions tab).
 
-```bash
-npm run dev
-```
+**One-time setup on GitHub:**
 
-Your application will be available at `http://localhost:5173`.
+1. Create a GitHub repo and push this project (`git remote add origin …` then `git push -u origin main`).
+2. Repo **Settings → Pages → Build and deployment → Source**: choose **GitHub Actions** (not “Deploy from a branch”).
+3. After the first successful workflow run, the site will be at  
+   `https://<user-or-org>.github.io/<repo-name>/`
 
-## Building for Production
+The workflow sets `VITE_BASE=/<repo-name>/` so asset and router paths match project Pages.
 
-Create a production build:
+### Local base path
 
-```bash
-npm run build
-```
+The Vite `base` is controlled by `VITE_BASE` (default `/`).
 
-## Deployment
+- Local / Netlify / custom domain: leave unset (`/`)
+- Match Pages locally: `VITE_BASE=/edinburghfolkclub/ npm run build`
 
-### Docker Deployment
+## Phase 1 stubs (intentional)
 
-To build and run using Docker:
+- **Contact** and **newsletter** forms use Netlify-shaped markup (`data-netlify`, honeypot, hidden static forms in `index.html`) but submit locally with a success message only.
+- **Members area** accepts any email (stored in `localStorage`). PayPal is a placeholder button; click it to mark membership paid in the prototype.
+- **Members’ tickets** is layout-only; booking is deferred.
 
-```bash
-docker build -t my-app .
+## Phase 2 hooks
 
-# Run the container
-docker run -p 3000:3000 my-app
-```
+| Concern | Ready seam |
+|---------|------------|
+| Hosting | `netlify.toml`, `public/_redirects` |
+| Forms | Netlify form names `contact` / `newsletter` |
+| Membership | `src/membership/` adapter + context |
+| PayPal | `VITE_PAYPAL_BUTTON_ID` env (unused until live SDK) |
 
-The containerized application can be deployed to any platform that supports Docker, including:
+## Content
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+| Path | Purpose |
+|------|---------|
+| `gigs/` | Season JSON + per-gig markdown |
+| `content/about.md` | About page |
+| `content/terms.md` | Terms & Conditions |
+| `content/gallery.json` | Media gallery |
+| `content/other-folk.json` | Other Folk links |
+| `content/members/` | Member documents |

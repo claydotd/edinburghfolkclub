@@ -1,0 +1,14 @@
+{
+  "documents": [
+    {
+      "slug": "welcome",
+      "title": "Welcome",
+      "description": "An introduction to the members’ area."
+    },
+    {
+      "slug": "constitution",
+      "title": "Club Constitution",
+      "description": "The governing document of Edinburgh Folk Club."
+    }
+  ]
+}

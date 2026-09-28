@@ -1,0 +1,39 @@
+{
+    "gigs": [
+        {
+            "date": "2026-09-30",
+            "name": "Àirdan",
+            "description": "High-energy music rooted in Scotland and influenced by the world, from Celtic Connections 2026 Battle of the Folk Bands finalists.",
+            "tickets": "https://tickets-scotland.com/whats-on/irdan",
+            "imagepath": "/gig-pics/airdan.webp"
+        },
+        {
+            "date": "2026-10-04",
+            "name": "Alan Reid & Christine Kydd",
+            "description": "A collaboration between two of the finest performers from the Scottish Traditional Hall of Fame, bringing songs old and new.",
+            "tickets": "https://tickets-scotland.com/whats-on/alan-reid-christine-kydd",
+            "imagepath": "/gig-pics/alan-christine.webp"
+        },
+        {
+            "date": "2026-10-28",
+            "name": "Iona Fyfe",
+            "description": "A multi-award winning singer, tireless advocate for the Scots Leid, with a lively mix of material rooted in the songs of Aberdeenshire.",
+            "imagepath": "/gig-pics/ionafyfe.jpg.webp"
+        },
+        {
+            "date": "2026-11-11",
+            "name": "Pete Morton",
+            "description": "An old-time troubadour from Leicester, and an EFC favourite celebrated for his unruly mix of storytelling, humour and song."
+        },
+        {
+            "date": "2026-11-25",
+            "name": "George Machray",
+            "description": "Celebrated for his comedy songs and parodies, with the odd poignant ballad along the way. An even with the focus on fun."
+        },
+        {
+            "date": "2026-12-09",
+            "name": "Judy Barker & Sally Thomas",
+            "description": "Songs and tunes from Scotland and England, with English concertina, Scottish smallpipes and beautiful, layered harmonies."
+        }
+    ]
+}
