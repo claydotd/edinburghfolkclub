@@ -4,10 +4,18 @@ import {
   useRef,
   useState,
   type AnimationEvent,
+  type ComponentPropsWithoutRef,
 } from 'react';
 import { createPortal } from 'react-dom';
 import Markdown from 'react-markdown';
 import type { GigDetails } from '../utils/gigDetails';
+import { publicUrl } from '../utils/publicUrl';
+
+const markdownComponents = {
+  img: ({ src, alt, ...props }: ComponentPropsWithoutRef<'img'>) => (
+    <img src={src ? publicUrl(src) : src} alt={alt ?? ''} {...props} />
+  ),
+};
 
 type GigDetailModalProps = {
   open: boolean;
@@ -147,7 +155,9 @@ export default function GigDetailModal({
             </div>
           </dl>
 
-          {markdown && <Markdown>{markdown}</Markdown>}
+          {markdown && (
+            <Markdown components={markdownComponents}>{markdown}</Markdown>
+          )}
         </div>
 
         {tickets && (

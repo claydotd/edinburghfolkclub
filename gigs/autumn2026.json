@@ -23,7 +23,9 @@
         {
             "date": "2026-11-11",
             "name": "Pete Morton",
-            "description": "An old-time troubadour from Leicester, and an EFC favourite celebrated for his unruly mix of storytelling, humour and song."
+            "description": "An old-time troubadour from Leicester, and an EFC favourite celebrated for his unruly mix of storytelling, humour and song.",
+            "imagepath": "/gig-pics/pete-morton.jpg",
+            "tickets": "https://tickets-scotland.com/whats-on/pete-morton"
         },
         {
             "date": "2026-11-25",

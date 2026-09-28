@@ -1,0 +1,109 @@
+{
+  "years": [
+    "2025",
+    "2024"
+  ],
+  "artists": [
+    {
+      "slug": "airdan",
+      "name": "Airdan",
+      "years": [
+        "2024"
+      ]
+    },
+    {
+      "slug": "alan-reid",
+      "name": "Alan Reid",
+      "years": [
+        "2025"
+      ]
+    },
+    {
+      "slug": "christine-kidd",
+      "name": "Christine Kidd",
+      "years": [
+        "2025"
+      ]
+    },
+    {
+      "slug": "iona-fyfe",
+      "name": "Iona Fyfe",
+      "years": [
+        "2024"
+      ]
+    },
+    {
+      "slug": "pete-morton",
+      "name": "Pete Morton",
+      "years": [
+        "2025"
+      ]
+    }
+  ],
+  "photos": [
+    {
+      "src": "/gallery/2025/alan-reid+christine-kidd/alan-christine.webp",
+      "year": "2025",
+      "folderSlug": "alan-reid+christine-kidd",
+      "artists": [
+        {
+          "slug": "alan-reid",
+          "name": "Alan Reid"
+        },
+        {
+          "slug": "christine-kidd",
+          "name": "Christine Kidd"
+        }
+      ],
+      "artistLabel": "Alan Reid & Christine Kidd",
+      "filename": "alan-christine.webp",
+      "width": 1269,
+      "height": 738
+    },
+    {
+      "src": "/gallery/2025/pete-morton/pete-morton.jpg",
+      "year": "2025",
+      "folderSlug": "pete-morton",
+      "artists": [
+        {
+          "slug": "pete-morton",
+          "name": "Pete Morton"
+        }
+      ],
+      "artistLabel": "Pete Morton",
+      "filename": "pete-morton.jpg",
+      "width": 4767,
+      "height": 3635
+    },
+    {
+      "src": "/gallery/2024/airdan/airdan.webp",
+      "year": "2024",
+      "folderSlug": "airdan",
+      "artists": [
+        {
+          "slug": "airdan",
+          "name": "Airdan"
+        }
+      ],
+      "artistLabel": "Airdan",
+      "filename": "airdan.webp",
+      "width": 1172,
+      "height": 814
+    },
+    {
+      "src": "/gallery/2024/iona-fyfe/ionafyfe.jpg.webp",
+      "year": "2024",
+      "folderSlug": "iona-fyfe",
+      "artists": [
+        {
+          "slug": "iona-fyfe",
+          "name": "Iona Fyfe"
+        }
+      ],
+      "artistLabel": "Iona Fyfe",
+      "filename": "ionafyfe.jpg.webp",
+      "width": 1008,
+      "height": 567
+    }
+  ]
+}

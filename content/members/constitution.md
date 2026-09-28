@@ -8,9 +8,9 @@ This page will hold the Edinburgh Folk Club constitution for members.
 
 The club shall be known as Edinburgh Folk Club.
 
-## 2. Objects
+## 2. Gigs
 
-The objects of the club are to promote and encourage interest in folk music through live performance and related activities.
+The club shall host gigs on Wednesdays.
 
 ## 3. Membership
 

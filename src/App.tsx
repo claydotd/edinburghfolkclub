@@ -15,6 +15,7 @@ import MembersDocuments from './pages/members/MembersDocuments.tsx'
 import MembersDocumentDetail from './pages/members/MembersDocumentDetail.tsx'
 import MembersTickets from './pages/members/MembersTickets.tsx'
 import RequireMember from './membership/RequireMember.tsx'
+import PlayEFC from './pages/PlayEFC.tsx'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/contact/play-at-efc" element={<PlayEFC />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/other-folk" element={<OtherFolk />} />
         <Route path="/terms" element={<Terms />} />

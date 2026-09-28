@@ -21,6 +21,21 @@
       <input type="text" name="bot-field" />
       <input type="email" name="email" />
     </form>
+    <form
+      name="play-efc"
+      netlify
+      netlify-honeypot="bot-field"
+      enctype="multipart/form-data"
+      hidden
+    >
+      <input type="text" name="bot-field" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="file" name="bio" />
+      <input type="url" name="website" />
+      <input type="file" name="picture" />
+      <textarea name="media-links"></textarea>
+    </form>
     <div id="root"></div>
     <script>
       // Restore deep-link path after GitHub Pages 404.html redirect.

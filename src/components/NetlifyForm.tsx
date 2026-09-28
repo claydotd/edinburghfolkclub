@@ -1,12 +1,13 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 type NetlifyFormProps = {
-  name: 'contact' | 'newsletter';
+  name: 'contact' | 'newsletter' | 'play-efc';
   children: (props: {
     submitted: boolean;
     submitting: boolean;
   }) => ReactNode;
   className?: string;
+  encType?: 'application/x-www-form-urlencoded' | 'multipart/form-data';
   onSuccess?: () => void;
 };
 
@@ -18,6 +19,7 @@ export default function NetlifyForm({
   name,
   children,
   className,
+  encType,
   onSuccess,
 }: NetlifyFormProps) {
   const [submitted, setSubmitted] = useState(false);
@@ -39,6 +41,7 @@ export default function NetlifyForm({
       className={className}
       name={name}
       method="POST"
+      encType={encType}
       data-netlify="true"
       data-netlify-honeypot="bot-field"
       onSubmit={handleSubmit}

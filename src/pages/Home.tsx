@@ -6,7 +6,9 @@ import {
   resolveGigDetails,
 } from '../utils/gigDetails';
 import { getGigMarkdown } from '../utils/gigMarkdown';
-
+import { publicUrl } from '../utils/publicUrl';
+import NewsletterSignup from '../components/NewsletterSignup';
+import Reveal from '../components/Reveal';
 type Gig = (typeof gigs.gigs)[number];
 
 const gigsData = gigs.gigs;
@@ -31,26 +33,32 @@ export default function Home() {
 
   return (
     <main className="flyer">
+      <Reveal variant="zoom" delay={40}>
       <div className="welcome">
         <h3>Welcome to the Edinburgh Folk Club est 1973</h3>
         <p>
           <em>Home to folk nights in the capital for over 50 years.</em>
         </p>
       </div>
+      </Reveal>
+      <Reveal variant="up" delay={80}>
       <header className="flyer-masthead">
         <h1 className="flyer-title">What's on?</h1>
-        <p className="flyer-season">Autumn 2026</p>
-      </header>
-
+          <p className="flyer-season">Autumn 2026</p>
+        </header>
+      </Reveal>
       <ol className="flyer-list">
         {gigsData.map((gig, index) => {
-          const hasImage = 'imagepath' in gig && Boolean(gig.imagepath);
+          const imagePath =
+            'imagepath' in gig && typeof gig.imagepath === 'string'
+              ? gig.imagepath
+              : undefined;
           const details = resolveGigDetails(gig);
 
           return (
             <li
               className={
-                hasImage ? 'flyer-gig flyer-gig--featured' : 'flyer-gig'
+                imagePath ? 'flyer-gig flyer-gig--featured' : 'flyer-gig'
               }
               key={gig.date}
               style={{ '--i': index } as CSSProperties}
@@ -89,10 +97,10 @@ export default function Home() {
                   </div>
                 </div>
 
-                {hasImage && (
+                {imagePath && (
                   <img
                     className="flyer-image"
-                    src={gig.imagepath}
+                    src={publicUrl(imagePath)}
                     alt=""
                     loading="lazy"
                   />
@@ -115,6 +123,8 @@ export default function Home() {
           onClose={() => setSelectedGig(null)}
         />
       )}
+        <NewsletterSignup />
     </main>
+    
   );
 }

@@ -1,13 +1,19 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import { defineConfig } from 'vite'
+import { galleryIndexPlugin } from './plugins/galleryIndex.ts'
+
+const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 // Set VITE_BASE=/edinburghfolkclub/ for GitHub project Pages; default / for Netlify / custom domain.
 export default defineConfig({
-  base: process.env.VITE_BASE || '/edinburghfolkclub/',
+  base: process.env.VITE_BASE || '/',
   plugins: [
+    galleryIndexPlugin(rootDir),
     react(),
-    babel({ presets: [reactCompilerPreset()] })
+    babel({ presets: [reactCompilerPreset()] }),
   ],
 })
