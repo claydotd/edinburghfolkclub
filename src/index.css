@@ -1620,17 +1620,96 @@ a {
    12. Other Folk
    ========================================================================== */
 
+.page.other-folk-page {
+  width: min(100%, 1126px);
+}
+
+.other-folk-page .page-masthead {
+  width: min(100%, 40rem);
+  margin-inline: auto;
+}
+
+.other-folk-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 0 2rem;
+}
+
+.other-folk-filter {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  color: var(--text-h);
+  background: color-mix(in srgb, var(--white) 70%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  transition:
+    color var(--transition-time) ease,
+    border-color var(--transition-time) ease,
+    background var(--transition-time) ease;
+}
+
+.other-folk-filter:hover,
+.other-folk-filter.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.other-folk-filter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.other-folk-sections {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem 1.5rem;
+  text-align: left;
+  align-items: start;
+}
+
+@media (min-width: 640px) {
+  .other-folk-sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .other-folk-sections {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.other-folk-sections--filtered {
+  grid-template-columns: 1fr;
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
+.other-folk-section-title {
+  margin: 0 0 1rem;
+  font-family: var(--heading);
+  font-size: 1.25rem;
+  color: var(--text-h);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  padding-bottom: 0.4rem;
+}
+
 .other-folk-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.85rem;
 }
 
 .other-folk-name {
-  margin: 0 0 0.35rem;
+  margin: 0;
+  font-size: 1.05rem;
 }
 
 .other-folk-name a {
@@ -1640,11 +1719,6 @@ a {
 
 .other-folk-name a:hover {
   color: var(--accent);
-}
-
-.other-folk-blurb {
-  margin: 0;
-  font-family: var(--serif);
 }
 
 /* ==========================================================================
