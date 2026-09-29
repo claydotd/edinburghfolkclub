@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import './App.css'
 import Header from './components/Header.tsx'
 import Footer from './components/Footer.tsx'
+import ScrollToTop from './components/ScrollToTop.tsx'
 import Home from './pages/Home.tsx'
 import About from './pages/About.tsx'
 import Contact from './pages/Contact.tsx'
@@ -20,6 +21,7 @@ import PlayEFC from './pages/PlayEFC.tsx'
 function App() {
   return (
     <>
+      <ScrollToTop />
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
