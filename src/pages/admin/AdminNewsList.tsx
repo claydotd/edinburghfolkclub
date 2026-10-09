@@ -69,11 +69,14 @@ export default function AdminNewsList() {
 
   return (
     <main className="page admin-page">
-      <header className="page-masthead">
-        <h1 className="page-title">Posts</h1>
-        <p className="page-lede">
-          <Link to="/admin/new">Create a new post</Link>
-        </p>
+      <header className="admin-page-header">
+        <div>
+          <h1 className="page-title">Posts</h1>
+          <p className="page-lede">Create, publish, and update club news.</p>
+        </div>
+        <Link to="/admin/new" className="admin-primary-link">
+          New post
+        </Link>
       </header>
 
       {error ? (
@@ -83,9 +86,14 @@ export default function AdminNewsList() {
       ) : null}
 
       {posts === null ? (
-        <p className="page-lede">Loading…</p>
+        <p className="admin-loading">Loading posts…</p>
       ) : posts.length === 0 ? (
-        <p className="page-lede">No posts yet.</p>
+        <div className="admin-empty">
+          <p className="page-lede">No posts yet.</p>
+          <Link to="/admin/new" className="admin-primary-link">
+            Create the first post
+          </Link>
+        </div>
       ) : (
         <ul className="admin-post-list">
           {posts.map((post) => (
@@ -95,21 +103,30 @@ export default function AdminNewsList() {
                   {post.title}
                 </Link>
                 <span className="admin-post-slug">/{post.slug}</span>
-                <span
-                  className={
-                    post.published
-                      ? 'admin-post-status is-published'
-                      : 'admin-post-status is-draft'
-                  }
-                >
-                  {post.published ? 'Published' : 'Draft'}
-                  {post.publishedAt ? ` · ${formatNewsDate(post.publishedAt)}` : ''}
-                </span>
+                <div className="admin-post-status-row">
+                  <span
+                    className={
+                      post.published
+                        ? 'admin-post-status is-published'
+                        : 'admin-post-status is-draft'
+                    }
+                  >
+                    {post.published ? 'Published' : 'Draft'}
+                  </span>
+                  {post.publishedAt ? (
+                    <span className="admin-post-date">
+                      {formatNewsDate(post.publishedAt)}
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <div className="admin-post-actions">
-                <Link to={`/admin/${post.id}`}>Edit</Link>
+                <Link to={`/admin/${post.id}`} className="admin-action-link">
+                  Edit
+                </Link>
                 <button
                   type="button"
+                  className="admin-action-btn"
                   disabled={busyId === post.id}
                   onClick={() => void togglePublished(post)}
                 >
@@ -117,7 +134,7 @@ export default function AdminNewsList() {
                 </button>
                 <button
                   type="button"
-                  className="admin-post-delete"
+                  className="admin-action-btn admin-post-delete"
                   disabled={busyId === post.id}
                   onClick={() => void onDelete(post)}
                 >

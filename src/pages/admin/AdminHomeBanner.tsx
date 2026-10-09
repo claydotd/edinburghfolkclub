@@ -63,25 +63,27 @@ export default function AdminHomeBanner() {
   if (loading) {
     return (
       <main className="page admin-page">
-        <p className="page-lede">Loading…</p>
+        <p className="admin-loading">Loading banner…</p>
       </main>
     )
   }
 
   return (
     <main className="page admin-page admin-edit-page">
-      <header className="page-masthead">
-        <h1 className="page-title">Homepage banner</h1>
-        <p className="page-lede">
-          Shown below the navigation on the homepage when enabled.{' '}
-          <Link to="/" target="_blank" rel="noreferrer">
-            Preview homepage
-          </Link>
-        </p>
+      <header className="admin-page-header">
+        <div>
+          <h1 className="page-title">Homepage banner</h1>
+          <p className="page-lede">
+            Shown below the navigation on the homepage when enabled.{' '}
+            <Link to="/" target="_blank" rel="noreferrer" className="admin-inline-link">
+              Preview homepage
+            </Link>
+          </p>
+        </div>
       </header>
 
       <form className="site-form site-form--wide admin-edit-form" onSubmit={onSubmit}>
-        <label className="form-field consent-field">
+        <label className="form-field consent-field admin-toggle">
           <input
             type="checkbox"
             name="enabled"
@@ -103,29 +105,31 @@ export default function AdminHomeBanner() {
           />
         </label>
 
-        <label className="form-field">
-          <span>CTA button label</span>
-          <input
-            type="text"
-            name="ctaLabel"
-            value={ctaLabel}
-            onChange={(e) => setCtaLabel(e.target.value)}
-            placeholder="e.g. Read more"
-            required={enabled}
-          />
-        </label>
+        <div className="admin-edit-grid">
+          <label className="form-field">
+            <span>CTA button label</span>
+            <input
+              type="text"
+              name="ctaLabel"
+              value={ctaLabel}
+              onChange={(e) => setCtaLabel(e.target.value)}
+              placeholder="e.g. Read more"
+              required={enabled}
+            />
+          </label>
 
-        <label className="form-field">
-          <span>CTA link</span>
-          <input
-            type="text"
-            name="ctaHref"
-            value={ctaHref}
-            onChange={(e) => setCtaHref(e.target.value)}
-            placeholder="/news or https://…"
-            required={enabled}
-          />
-        </label>
+          <label className="form-field">
+            <span>CTA link</span>
+            <input
+              type="text"
+              name="ctaHref"
+              value={ctaHref}
+              onChange={(e) => setCtaHref(e.target.value)}
+              placeholder="/news or https://…"
+              required={enabled}
+            />
+          </label>
+        </div>
 
         {error ? (
           <p className="news-error" role="alert">
@@ -139,9 +143,11 @@ export default function AdminHomeBanner() {
           </p>
         ) : null}
 
-        <button type="submit" className="form-submit" disabled={saving}>
-          {saving ? 'Saving…' : 'Save banner'}
-        </button>
+        <div className="admin-form-actions">
+          <button type="submit" className="form-submit" disabled={saving}>
+            {saving ? 'Saving…' : 'Save banner'}
+          </button>
+        </div>
       </form>
     </main>
   )

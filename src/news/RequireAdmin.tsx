@@ -29,8 +29,8 @@ export default function RequireAdmin() {
 
   if (!ready) {
     return (
-      <main className="page admin-page">
-        <p className="page-lede">Loading…</p>
+      <main className="page admin-page admin-gate">
+        <p className="admin-loading">Checking session…</p>
       </main>
     )
   }

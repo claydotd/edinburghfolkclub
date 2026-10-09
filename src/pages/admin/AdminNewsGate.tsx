@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { adminLogin, adminMe, isNewsDemo } from '../../news/api'
 
-
 export default function AdminNewsGate() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -51,8 +50,8 @@ export default function AdminNewsGate() {
 
   if (checking) {
     return (
-      <main className="page admin-page">
-        <p className="page-lede">Loading…</p>
+      <main className="page admin-page admin-gate">
+        <p className="admin-loading">Checking session…</p>
       </main>
     )
   }
@@ -62,38 +61,44 @@ export default function AdminNewsGate() {
   }
 
   return (
-    <main className="page admin-page">
-      <header className="page-masthead">
-        <h1 className="page-title">Admin</h1>
-        <p className="page-lede">Sign in to manage news and the homepage banner.</p>
-      </header>
-      <form className="site-form site-form--compact" onSubmit={onSubmit}>
-        <label className="form-field">
-          <span>Password</span>
-          <input
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-        {error ? (
-          <p className="form-note news-error" role="alert">
-            {error}
+    <main className="page admin-page admin-gate">
+      <div className="admin-gate-panel">
+        <header className="admin-gate-header">
+          <p className="admin-shell-mark">Edinburgh Folk Club</p>
+          <h1 className="page-title">Admin sign in</h1>
+          <p className="page-lede">
+            Manage news posts and the homepage banner.
+          </p>
+        </header>
+        <form className="site-form admin-gate-form" onSubmit={onSubmit}>
+          <label className="form-field">
+            <span>Password</span>
+            <input
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoFocus
+            />
+          </label>
+          {error ? (
+            <p className="form-note news-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <button type="submit" className="form-submit" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+        {isNewsDemo() ? (
+          <p className="admin-gate-note">
+            Prototype (GitHub Pages): password is <code>admin</code>. Changes stay
+            in this browser only.
           </p>
         ) : null}
-        <button type="submit" className="form-submit" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-      {isNewsDemo() ? (
-        <p className="form-note">
-          Prototype (GitHub Pages): password is <code>admin</code>. Changes stay
-          in this browser only.
-        </p>
-      ) : null}
+      </div>
     </main>
   )
 }

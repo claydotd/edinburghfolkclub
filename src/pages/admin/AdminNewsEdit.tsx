@@ -85,7 +85,7 @@ export default function AdminNewsEdit() {
   if (loading) {
     return (
       <main className="page admin-page">
-        <p className="page-lede">Loading…</p>
+        <p className="admin-loading">Loading post…</p>
       </main>
     )
   }
@@ -93,53 +93,66 @@ export default function AdminNewsEdit() {
   if (loadError) {
     return (
       <main className="page admin-page">
-        <header className="page-masthead">
-          <h1 className="page-title">Post not found</h1>
-          <p className="page-lede">{loadError}</p>
-          <p className="page-lede">
-            <Link to="/admin/list">← All posts</Link>
-          </p>
+        <header className="admin-page-header">
+          <div>
+            <h1 className="page-title">Post not found</h1>
+            <p className="page-lede">{loadError}</p>
+          </div>
         </header>
+        <p className="page-lede">
+          <Link to="/admin/list" className="admin-back-link">
+            ← All posts
+          </Link>
+        </p>
       </main>
     )
   }
 
   return (
     <main className="page admin-page admin-edit-page">
-      <header className="page-masthead">
-        <h1 className="page-title">{isNew ? 'New post' : 'Edit post'}</h1>
-        <p className="page-lede">
-          <Link to="/admin/list">← All posts</Link>
-        </p>
+      <header className="admin-page-header">
+        <div>
+          <Link to="/admin/list" className="admin-back-link">
+            ← All posts
+          </Link>
+          <h1 className="page-title">{isNew ? 'New post' : 'Edit post'}</h1>
+          <p className="page-lede">
+            {isNew
+              ? 'Write a draft, then publish when it is ready.'
+              : 'Update the post content and publishing status.'}
+          </p>
+        </div>
       </header>
 
       <form className="site-form site-form--wide admin-edit-form" onSubmit={onSubmit}>
-        <label className="form-field">
-          <span>Title</span>
-          <input
-            type="text"
-            name="title"
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            required
-          />
-        </label>
+        <div className="admin-edit-grid">
+          <label className="form-field">
+            <span>Title</span>
+            <input
+              type="text"
+              name="title"
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              required
+            />
+          </label>
 
-        <label className="form-field">
-          <span>Slug</span>
-          <input
-            type="text"
-            name="slug"
-            value={slug}
-            onChange={(e) => {
-              setSlugTouched(true)
-              setSlug(e.target.value)
-            }}
-            pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-            title="Lowercase letters, numbers, and hyphens"
-            required
-          />
-        </label>
+          <label className="form-field">
+            <span>Slug</span>
+            <input
+              type="text"
+              name="slug"
+              value={slug}
+              onChange={(e) => {
+                setSlugTouched(true)
+                setSlug(e.target.value)
+              }}
+              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+              title="Lowercase letters, numbers, and hyphens"
+              required
+            />
+          </label>
+        </div>
 
         <label className="form-field">
           <span>Excerpt</span>
@@ -151,7 +164,7 @@ export default function AdminNewsEdit() {
           />
         </label>
 
-        <label className="form-field consent-field">
+        <label className="form-field consent-field admin-toggle">
           <input
             type="checkbox"
             name="published"
@@ -169,9 +182,11 @@ export default function AdminNewsEdit() {
           </p>
         ) : null}
 
-        <button type="submit" className="form-submit" disabled={saving}>
-          {saving ? 'Saving…' : isNew ? 'Create post' : 'Save changes'}
-        </button>
+        <div className="admin-form-actions">
+          <button type="submit" className="form-submit" disabled={saving}>
+            {saving ? 'Saving…' : isNew ? 'Create post' : 'Save changes'}
+          </button>
+        </div>
       </form>
     </main>
   )

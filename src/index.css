@@ -3290,68 +3290,208 @@ a.location-link:hover,
 /* --- Admin shell --- */
 .admin-shell {
   flex: 1;
-  width: min(100%, 960px);
-  margin: 0 auto;
-  padding: 1rem 1.25rem 2.5rem;
+  width: min(100%, 920px);
+  margin: 1.25rem auto 2.5rem;
+  padding: 0;
   box-sizing: border-box;
+  text-align: left;
+  background: color-mix(in srgb, var(--white) 88%, var(--yellow));
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: var(--shadow);
 }
 
-.admin-shell-bar {
+.admin-shell-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  padding: 1.15rem 1.35rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--gold) 18%, var(--white)) 0%,
+      color-mix(in srgb, var(--white) 92%, var(--yellow)) 100%
+    );
+}
+
+.admin-shell-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.admin-shell-mark {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 1.15rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+  line-height: 1.2;
 }
 
 .admin-shell-label {
   margin: 0;
   font-family: var(--sans);
-  font-size: 0.95rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text) 72%, transparent);
 }
 
-.admin-sign-out {
+.admin-shell-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.admin-shell-link,
+.admin-sign-out,
+.admin-action-btn,
+.admin-action-link {
   font-family: var(--sans);
-  font-size: 0.9rem;
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
-  color: var(--text);
-  padding: 0.35rem 0.7rem;
+  font-size: 0.88rem;
+  line-height: 1.2;
+  text-decoration: none;
+  color: var(--text-h);
+  background: color-mix(in srgb, var(--white) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  padding: 0.42rem 0.75rem;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
 }
 
-.admin-sign-out:hover {
+.admin-shell-link:hover,
+.admin-sign-out:hover,
+.admin-action-btn:hover:not(:disabled),
+.admin-action-link:hover {
   border-color: var(--accent);
   color: var(--accent);
+  background: color-mix(in srgb, var(--white) 90%, var(--heather-wash));
 }
 
 .admin-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  gap: 0.15rem 0.35rem;
+  margin: 0;
+  padding: 0.55rem 1rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--white) 55%, transparent);
 }
 
 .admin-nav a {
+  position: relative;
   text-decoration: none;
-  color: var(--text);
+  color: color-mix(in srgb, var(--text) 88%, transparent);
   font-family: var(--sans);
+  font-size: 0.95rem;
+  padding: 0.65rem 0.85rem 0.8rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
 }
 
-.admin-nav a:hover,
+.admin-nav a:hover {
+  color: var(--accent);
+}
+
 .admin-nav a.active {
   color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: var(--weight-bold);
 }
 
 .admin-shell .page {
   width: 100%;
-  padding-inline: 0;
+  padding: 1.35rem 1.35rem 1.75rem;
 }
 
-.admin-page .page-masthead {
+.admin-page {
   text-align: left;
+}
+
+.admin-page .page-title {
+  font-size: clamp(1.65rem, 2.4vw, 2rem);
+  margin-bottom: 0.35rem;
+}
+
+.admin-page .page-lede {
+  font-size: 1rem;
+  color: color-mix(in srgb, var(--text) 88%, transparent);
+}
+
+.admin-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.admin-page-header .page-title {
+  margin-bottom: 0.25rem;
+}
+
+.admin-primary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  text-decoration: none;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--ink);
+  background: var(--thistle);
+  color: var(--white);
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.admin-primary-link:hover {
+  background: color-mix(in srgb, var(--thistle) 80%, var(--ink));
+  color: var(--white);
+}
+
+.admin-back-link,
+.admin-inline-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.admin-back-link {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  margin-bottom: 0.55rem;
+}
+
+.admin-back-link:hover,
+.admin-inline-link:hover {
+  text-decoration: underline;
+}
+
+.admin-loading {
+  margin: 0;
+  font-family: var(--sans);
+  color: color-mix(in srgb, var(--text) 75%, transparent);
+}
+
+.admin-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem 0 0.5rem;
 }
 
 .admin-post-list {
@@ -3360,7 +3500,7 @@ a.location-link:hover,
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .admin-post-row {
@@ -3368,24 +3508,28 @@ a.location-link:hover,
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem 1.25rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  gap: 0.85rem 1.25rem;
+  padding: 1rem 1.05rem;
+  background: color-mix(in srgb, var(--white) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 .admin-post-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.28rem;
   min-width: min(100%, 16rem);
+  flex: 1;
 }
 
 .admin-post-title {
   font-family: var(--heading);
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
   color: var(--text-h);
   text-decoration: none;
+  line-height: 1.25;
 }
 
 .admin-post-title:hover {
@@ -3393,86 +3537,218 @@ a.location-link:hover,
 }
 
 .admin-post-slug {
-  font-family: var(--sans);
-  font-size: 0.85rem;
-  color: color-mix(in srgb, var(--text) 65%, transparent);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--text) 62%, transparent);
+}
+
+.admin-post-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+  margin-top: 0.15rem;
 }
 
 .admin-post-status {
+  display: inline-flex;
+  align-items: center;
   font-family: var(--sans);
-  font-size: 0.9rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid transparent;
 }
 
 .admin-post-status.is-published {
   color: var(--moss);
+  background: var(--moss-wash);
+  border-color: color-mix(in srgb, var(--moss) 28%, transparent);
 }
 
 .admin-post-status.is-draft {
-  color: color-mix(in srgb, var(--text) 70%, transparent);
+  color: color-mix(in srgb, var(--text) 78%, transparent);
+  background: color-mix(in srgb, var(--ink) 6%, var(--white));
+  border-color: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.admin-post-date {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--text) 68%, transparent);
 }
 
 .admin-post-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.45rem;
   align-items: center;
-  font-family: var(--sans);
-  font-size: 0.9rem;
 }
 
-.admin-post-actions a {
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.admin-post-actions a:hover {
-  text-decoration: underline;
-}
-
-.admin-post-actions button {
-  font: inherit;
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--text) 25%, transparent);
-  color: var(--text);
-  padding: 0.3rem 0.65rem;
-  cursor: pointer;
-}
-
-.admin-post-actions button:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.admin-post-actions button:disabled {
+.admin-action-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
 .admin-post-delete:hover:not(:disabled) {
-  border-color: color-mix(in srgb, #8b1e1e 70%, var(--text));
-  color: color-mix(in srgb, #8b1e1e 85%, var(--text));
+  border-color: color-mix(in srgb, var(--berry) 70%, var(--text));
+  color: color-mix(in srgb, var(--berry) 90%, var(--text));
+  background: var(--berry-wash);
 }
 
 .admin-edit-page {
-  width: min(100%, 960px);
+  width: 100%;
 }
 
 .admin-edit-form {
   max-width: none;
+  gap: 1.15rem;
+}
+
+.admin-edit-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .admin-edit-grid {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+
+.admin-toggle {
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  background: color-mix(in srgb, var(--white) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.admin-toggle input {
+  margin-top: 0.2rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.admin-toggle span {
+  font-size: 0.95rem;
+  color: var(--text-h);
+}
+
+.admin-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 .admin-banner-saved {
-  margin: 0 0 0.75rem;
+  margin: 0;
   font-family: var(--sans);
   color: var(--moss);
+  background: var(--moss-wash);
+  border: 1px solid color-mix(in srgb, var(--moss) 28%, transparent);
+  padding: 0.55rem 0.75rem;
+}
+
+/* --- Admin gate (sign-in) --- */
+.admin-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 440px);
+  min-height: calc(100svh - 2rem);
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem;
+}
+
+.admin-gate-panel {
+  width: 100%;
+  padding: 1.6rem 1.4rem 1.5rem;
+  background: color-mix(in srgb, var(--white) 88%, var(--yellow));
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: var(--shadow);
+  text-align: left;
+}
+
+.admin-gate-header {
+  margin-bottom: 1.35rem;
+}
+
+.admin-gate-header .admin-shell-mark {
+  margin-bottom: 0.7rem;
+}
+
+.admin-gate-header .page-title {
+  font-size: 1.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.admin-gate-header .page-lede {
+  font-size: 0.98rem;
+}
+
+.admin-gate-form {
+  max-width: none;
+}
+
+.admin-gate-form .form-note {
+  margin-top: 0;
+  text-align: left;
+}
+
+.admin-gate-note {
+  margin: 1.15rem 0 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--text) 78%, transparent);
+}
+
+.admin-gate-note code {
+  font-family: var(--mono);
+  font-size: 0.84em;
+  padding: 0.08rem 0.28rem;
+  background: var(--code-bg);
+}
+
+.admin-page .news-error {
+  padding: 0.55rem 0.75rem;
+  background: var(--berry-wash);
+  border: 1px solid color-mix(in srgb, var(--berry) 28%, transparent);
+}
+
+@media (max-width: 640px) {
+  .admin-shell {
+    margin: 0.75rem 0.65rem 1.5rem;
+  }
+
+  .admin-shell-header,
+  .admin-shell .page {
+    padding-inline: 1rem;
+  }
+
+  .admin-nav {
+    padding-inline: 0.65rem;
+  }
+
+  .admin-nav a {
+    padding-inline: 0.65rem;
+    font-size: 0.9rem;
+  }
 }
 
 /* --- Markdown editor (Visual / Code) --- */
 .markdown-editor {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  margin: 0.5rem 0 1rem;
+  gap: 0.7rem;
+  margin: 0.15rem 0 0.35rem;
+  padding: 0.95rem 1rem 1.05rem;
+  background: color-mix(in srgb, var(--white) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 .markdown-editor-bar {
@@ -3486,11 +3762,13 @@ a.location-link:hover,
 .markdown-editor-label {
   font-family: var(--sans);
   font-size: 0.95rem;
+  color: var(--text-h);
 }
 
 .markdown-editor-mode {
   display: inline-flex;
-  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  background: color-mix(in srgb, var(--white) 80%, transparent);
 }
 
 .markdown-editor-mode button {
@@ -3499,32 +3777,33 @@ a.location-link:hover,
   background: transparent;
   border: 0;
   color: var(--text);
-  padding: 0.35rem 0.7rem;
+  padding: 0.38rem 0.75rem;
   cursor: pointer;
 }
 
 .markdown-editor-mode button + button {
-  border-left: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
 }
 
 .markdown-editor-mode button.is-active {
-  background: color-mix(in srgb, var(--bg) 88%, var(--text));
-  color: var(--text-h);
+  background: color-mix(in srgb, var(--thistle) 12%, var(--white));
+  color: var(--accent);
+  font-weight: var(--weight-bold);
 }
 
 .markdown-editor-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .markdown-editor-toolbar button {
   font-family: var(--sans);
   font-size: 0.85rem;
-  background: color-mix(in srgb, var(--bg) 92%, var(--text));
-  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  background: color-mix(in srgb, var(--white) 85%, var(--yellow));
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
   color: var(--text);
-  padding: 0.3rem 0.55rem;
+  padding: 0.32rem 0.55rem;
   cursor: pointer;
 }
 
@@ -3535,15 +3814,17 @@ a.location-link:hover,
 
 .markdown-editor-visual {
   min-height: 22rem;
-  border: 1px solid color-mix(in srgb, var(--text) 15%, transparent);
-  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  padding: 0.9rem 1rem;
   outline: none;
-  background: color-mix(in srgb, var(--bg) 96%, var(--text));
+  background: color-mix(in srgb, var(--white) 92%, var(--yellow));
   overflow: auto;
 }
 
 .markdown-editor-visual:focus {
   border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  outline-offset: 1px;
 }
 
 .markdown-editor-visual:empty::before,
@@ -3558,18 +3839,19 @@ a.location-link:hover,
   min-height: 22rem;
   width: 100%;
   box-sizing: border-box;
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+  font-family: var(--mono);
   font-size: 0.9rem;
   line-height: 1.45;
   resize: vertical;
-  border: 1px solid color-mix(in srgb, var(--text) 15%, transparent);
-  padding: 0.85rem 1rem;
-  background: color-mix(in srgb, var(--bg) 96%, var(--text));
-  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  padding: 0.9rem 1rem;
+  background: color-mix(in srgb, var(--white) 92%, var(--yellow));
+  color: var(--text-h);
 }
 
 .markdown-editor-code:focus {
-  outline: none;
+  outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  outline-offset: 1px;
   border-color: var(--accent);
 }
 
