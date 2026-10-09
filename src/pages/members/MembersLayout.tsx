@@ -1,10 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMembership } from '../../membership/useMembership';
+import Reveal from '../../components/Reveal';
 
 export default function MembersLayout() {
   const { memberEmail, signOut } = useMembership();
 
   return (
+    <Reveal variant="zoom" delay={100}>
     <div className="members-shell">
       <div className="members-shell-bar">
         <p className="members-shell-email">
@@ -21,5 +23,6 @@ export default function MembersLayout() {
       </nav>
       <Outlet />
     </div>
+    </Reveal>
   );
 }

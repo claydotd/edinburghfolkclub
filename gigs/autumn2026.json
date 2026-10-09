@@ -3,27 +3,30 @@
         {
             "date": "2026-09-30",
             "name": "Àirdan",
-            "description": "High-energy music rooted in Scotland and influenced by the world, from Celtic Connections 2026 Battle of the Folk Bands finalists.",
+            "description": "High-energy music rooted in Scotland and influenced by the world, from Celtic Connections 2026 Battle of the Folk Bands finalists. \"Raw energy and a modern young twist\" (Celtic Music Radio). Àirdan is an exciting new trad band born from the vibrant pub scene of Edinburgh.",
             "tickets": "https://tickets-scotland.com/whats-on/irdan",
-            "imagepath": "/gig-pics/airdan.webp"
+            "imagepath": "/gig-pics/airdan.webp",
+            "website": "https://airdanmusic.com/home"
         },
         {
             "date": "2026-10-04",
             "name": "Alan Reid & Christine Kydd",
-            "description": "A collaboration between two of the finest performers from the Scottish Traditional Hall of Fame, bringing songs old and new.",
+            "description": "A collaboration between two of the finest performers from the Scottish Traditional Hall of Fame, bringing songs old and new. With years of experience delighting audiences worldwide Alan and Christine bring in this new collaboration a beautifully curated repertoire of old and new songs, irresistible harmonies and a warmth of enjoyment in sharing the stage together.",
             "tickets": "https://tickets-scotland.com/whats-on/alan-reid-christine-kydd",
             "imagepath": "/gig-pics/alan-christine.webp"
         },
         {
             "date": "2026-10-28",
             "name": "Iona Fyfe",
-            "description": "A multi-award winning singer, tireless advocate for the Scots Leid, with a lively mix of material rooted in the songs of Aberdeenshire.",
-            "imagepath": "/gig-pics/ionafyfe.jpg.webp"
+            "description": "A multi-award winning singer, tireless advocate for the Scots Leid, with a lively mix of material rooted in the songs of Aberdeenshire. Honoured at the Scots Language Awards with the title of Speaker of the Year in 2021, Iona performs both folk and pop songs in the Scots language, remaining true to her rooting in tradition.",
+            "imagepath": "/gig-pics/ionafyfe.jpg.webp",
+            "tickets": "https://tickets-scotland.com/whats-on/iona-fyfe-1",
+            "website": "https://ionafyfe.com"
         },
         {
             "date": "2026-11-11",
             "name": "Pete Morton",
-            "description": "An old-time troubadour from Leicester, and an EFC favourite celebrated for his unruly mix of storytelling, humour and song.",
+            "description": "An old-time troubadour from Leicester, and an EFC favourite celebrated for his unruly mix of storytelling, humour and song. Pete Morton began his musical journey after he came across a Buffy St Marie record. It was from that moment on he decided to become a folk singer. Discovering the songs of the early sixties protest movement, it inspired him to write, and take his songs to folk clubs and beyond.  ",
             "imagepath": "/gig-pics/pete-morton.jpg",
             "tickets": "https://tickets-scotland.com/whats-on/pete-morton"
         },

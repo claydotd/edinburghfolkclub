@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import gigs from '../../gigs/autumn2026.json';
 import GigDetailModal from '../components/GigDetailModal';
 import {
@@ -8,10 +9,18 @@ import {
 import { getGigMarkdown } from '../utils/gigMarkdown';
 import { publicUrl } from '../utils/publicUrl';
 import NewsletterSignup from '../components/NewsletterSignup';
+import HomeBanner from '../components/HomeBanner';
 import Reveal from '../components/Reveal';
 type Gig = (typeof gigs.gigs)[number];
 
 const gigsData = gigs.gigs;
+
+function localDateString(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -24,6 +33,7 @@ function formatDate(dateStr: string) {
 
 export default function Home() {
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
+  const upcomingGigs = gigsData.filter((gig) => gig.date >= localDateString());
   const selectedDetails = selectedGig
     ? resolveGigDetails(selectedGig)
     : null;
@@ -32,23 +42,18 @@ export default function Home() {
     : null;
 
   return (
+    <>
+    <HomeBanner />
     <main className="flyer">
       <Reveal variant="zoom" delay={40}>
       <div className="welcome">
-        <h3>Welcome to the Edinburgh Folk Club est 1973</h3>
-        <p>
-          <em>Home to folk nights in the capital for over 50 years.</em>
-        </p>
+        <div className="welcome-text">
+          <span><em>Coming up at <strong><Link to="/contact#location" className="location-link">EFC, 14 Royal Terrace EH7 5AB</Link>. </strong></em></span>
+          </div>
       </div>
       </Reveal>
-      <Reveal variant="up" delay={80}>
-      <header className="flyer-masthead">
-        <h1 className="flyer-title">What's on?</h1>
-          <p className="flyer-season">Autumn 2026</p>
-        </header>
-      </Reveal>
       <ol className="flyer-list">
-        {gigsData.map((gig, index) => {
+        {upcomingGigs.map((gig, index) => {
           const imagePath =
             'imagepath' in gig && typeof gig.imagepath === 'string'
               ? gig.imagepath
@@ -66,16 +71,16 @@ export default function Home() {
               <div className="flyer-body">
                 <div className="flyer-copy">
                   <div className="flyer-header">
-                    <h2 className="flyer-name">{gig.name}</h2>
-                    <time className="flyer-date" dateTime={gig.date}>
+                  <time className="flyer-date" dateTime={gig.date}>
                       {formatDate(gig.date)}
                     </time>
-                    <p className="flyer-venue">{details.venue}</p>
+                    <h2 className="flyer-name">{gig.name}</h2>
                   </div>
                   <p className="flyer-description">{gig.description}</p>
                   <p className="flyer-prices">
                       {formatTicketPrices(details.ticketPrices)}
                     </p>
+                    <p><em className="flyer-prices-note">*Tickets Scotland sales will incur a booking fee</em></p>
                   <div className="flyer-actions">
                     <button
                       type="button"
@@ -91,7 +96,7 @@ export default function Home() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        Tickets
+                        Book at Tickets Scotland
                       </a>
                     )}
                   </div>
@@ -120,11 +125,14 @@ export default function Home() {
           tickets={
             'tickets' in selectedGig ? selectedGig.tickets : undefined
           }
+          website={
+            'website' in selectedGig ? selectedGig.website : undefined
+          }
           onClose={() => setSelectedGig(null)}
         />
       )}
         <NewsletterSignup />
     </main>
-    
+    </>
   );
 }

@@ -10,7 +10,7 @@ export default function NewsletterSignup() {
     >
       <h2 id="newsletter-heading">Join our mailing list</h2>
       <p className="form-intro">
-        Get the latest news and updates about upcoming gigs.
+        <em>Get the latest updates from EFC in your inbox.</em>
       </p>
       <NetlifyForm name="newsletter" className="site-form site-form--compact">
         {({ submitted, submitting }) =>

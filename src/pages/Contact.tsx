@@ -1,19 +1,12 @@
-import { useEffect } from 'react';
 import NetlifyForm from '../components/NetlifyForm';
 import NewsletterSignup from '../components/NewsletterSignup';
 import Reveal from '../components/Reveal';
 import { Link } from 'react-router-dom';
 import { publicUrl } from '../utils/publicUrl';
+import efcmap from '/public/images/efcmap.png';
+
 
 export default function Contact() {
-  useEffect(() => {
-    if (window.location.hash === '#newsletter') {
-      document.getElementById('newsletter')?.scrollIntoView({
-        behavior: 'smooth',
-      });
-    }
-  }, []);
-
   return (
     <main className="page contact-page">
       <Reveal variant="up" delay={40}>
@@ -78,6 +71,11 @@ export default function Contact() {
       </div>
 
       <Reveal variant="fade" delay={280}>
+        <section id="location" aria-labelledby="location-heading" className="contact-map">
+          <h2 id="location-heading">Location</h2>
+          <span className="location-link"><p>what3words: <a href="https://w3w.co/zealous.cure.blues" target="_blank" rel="noopener noreferrer">///zealous.cure.blues</a></p></span>
+          <img src={publicUrl(efcmap)} alt="Edinburgh Folk Club" className="contact-map-image" />
+        </section>
         <section className="contact-bottom">
           <img src={publicUrl('/images/efc-crowd.webp')} alt="Edinburgh Folk Club" className="contact-bottom-image" />
         </section>

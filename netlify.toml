@@ -1,8 +1,9 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
-# SPA fallback — ready for Phase 2 Netlify hosting
+# SPA fallback — Netlify Functions are matched before this rule
 [[redirects]]
   from = "/*"
   to = "/index.html"

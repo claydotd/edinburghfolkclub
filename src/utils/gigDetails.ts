@@ -16,8 +16,8 @@ export const GIG_DEFAULTS: GigDetails = {
   doors: '7:30pm',
   music: '8:00pm',
   ticketPrices: {
-    standard: '£15',
-    unwaged: '£12',
+    standard: '£15*',
+    unwaged: '£12*',
     members: '£10',
   },
 };
@@ -51,5 +51,5 @@ export function resolveGigDetails(
 }
 
 export function formatTicketPrices(prices: TicketPrices): string {
-  return `${prices.standard} / ${prices.unwaged} / ${prices.members}`;
+  return `${prices.standard} / unwaged ${prices.unwaged} / members ${prices.members}`;
 }

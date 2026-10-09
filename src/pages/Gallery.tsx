@@ -16,6 +16,7 @@ import {
   toAlbumPhotos,
 } from '../utils/gallery'
 import { publicUrl } from '../utils/publicUrl'
+import Reveal from '../components/Reveal'
 
 type BrowseMode = 'year' | 'artist'
 
@@ -121,11 +122,13 @@ export default function Gallery() {
 
   return (
     <main className="page gallery-page">
+      <Reveal variant="zoom" delay={100}>
       <header className="page-masthead">
         <h1 className="page-title">Media Gallery</h1>
         <p className="page-lede">Browse by year or by artist.</p>
       </header>
-
+      </Reveal>
+      <Reveal variant="fade" delay={200}>
       <div className="gallery-mode" role="group" aria-label="Browse gallery by">
         <button
           type="button"
@@ -152,8 +155,9 @@ export default function Gallery() {
           By artist
         </button>
       </div>
-
+      </Reveal>
       {mode === 'year' ? (
+        <Reveal variant="up" delay={300}>
         <div className="gallery-layout gallery-layout--year">
           {years.length > 0 ? (
             <nav
@@ -236,6 +240,7 @@ export default function Gallery() {
             )}
           </div>
         </div>
+        </Reveal>
       ) : (
         <div className="gallery-layout">
           {selectedArtist ? (

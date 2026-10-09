@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useMembership } from '../../membership/useMembership';
+import Reveal from '../../components/Reveal';
 
 export default function MembersGate() {
   const { memberEmail, ready, signIn } = useMembership();
@@ -28,6 +29,7 @@ export default function MembersGate() {
   }
 
   return (
+    <Reveal variant="up" delay={100}>
     <main className="page members-gate">
       <header className="page-masthead">
         <h1 className="page-title">Members</h1>
@@ -57,5 +59,6 @@ export default function MembersGate() {
         Netlify backend.
       </p>
     </main>
+    </Reveal>
   );
 }

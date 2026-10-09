@@ -23,6 +23,7 @@ type GigDetailModalProps = {
   details: GigDetails;
   markdown: string | null;
   tickets?: string;
+  website?: string;
   onClose: () => void;
 };
 
@@ -32,6 +33,7 @@ export default function GigDetailModal({
   details,
   markdown,
   tickets,
+  website,
   onClose,
 }: GigDetailModalProps) {
   const titleId = useId();
@@ -127,9 +129,21 @@ export default function GigDetailModal({
           >
             ← Back
           </button>
-          <h2 id={titleId} className="gig-modal__title">
-            {name}
-          </h2>
+          <div className="gig-modal__heading">
+            <h2 id={titleId} className="gig-modal__title">
+              {name}
+            </h2>
+            {website && (
+              <a
+                className="gig-modal__btn gig-modal__btn--website"
+                href={website}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Visit website
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="gig-modal__content">
@@ -151,6 +165,7 @@ export default function GigDetailModal({
               <dd>
                 {ticketPrices.standard} standard · {ticketPrices.unwaged}{' '}
                 unwaged · {ticketPrices.members} members
+                <p><em className="gig-modal__prices-note">*Tickets Scotland sales will incur a booking fee</em></p>
               </dd>
             </div>
           </dl>
@@ -168,7 +183,7 @@ export default function GigDetailModal({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Book tickets
+              Book at Tickets Scotland
             </a>
           </div>
         )}

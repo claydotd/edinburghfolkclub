@@ -1,14 +1,22 @@
 # Edinburgh Folk Club
 
-Static React + Vite prototype for layout and content. Hosted on GitHub Pages in Phase 1; forms and membership are UI stubs ready for a Netlify backend in Phase 2.
+Static React + Vite prototype for layout and content. Hosted on GitHub Pages in Phase 1; forms and membership are UI stubs. News uses Netlify Functions + Database + Blobs when deployed on Netlify (with a local file store for `npm run dev`).
 
 ## Scripts
 
 ```bash
 npm install
-npm run dev      # local development
+npm run dev      # local development (includes news API stub)
 npm run build    # production build → dist/
 npm run preview  # preview the production build
+```
+
+For full Netlify Functions + Database + Blobs locally, link the site and use the Netlify CLI:
+
+```bash
+npx netlify login
+npx netlify link
+npx netlify dev
 ```
 
 ## Deploy (GitHub Actions → GitHub Pages)
@@ -37,6 +45,34 @@ The Vite `base` is controlled by `VITE_BASE` (default `/`).
 - **Members area** accepts any email (stored in `localStorage`). PayPal is a placeholder button; click it to mark membership paid in the prototype.
 - **Members’ tickets** is layout-only; booking is deferred.
 
+## News (Netlify DB + Blobs)
+
+Public `/news` reads a **Blobs snapshot** via `/.netlify/functions/news` (CDN-cached). Postgres is only used when an editor saves from `/admin`.
+
+| Piece | Role |
+|-------|------|
+| `news_posts` table | Source of truth (migration in `netlify/database/migrations/`) |
+| Blobs store `news` / key `published` | Published feed snapshot for public reads |
+| Blobs store `news` / key `home-banner` | Homepage banner text + CTA |
+| `/.netlify/functions/news` | Public read (blob only; `?resource=banner` for banner) |
+| `/.netlify/functions/news-admin` | Login + CRUD (DB, then rebuild snapshot); `?action=banner` for banner |
+| `.data/news-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
+
+### Netlify setup
+
+1. Enable **Netlify Database** on the site (migrations apply on deploy).
+2. Set environment variables (Site settings → Environment variables, or `.env` for local):
+
+| Variable | Purpose |
+|----------|---------|
+| `NEWS_ADMIN_PASSWORD` | Shared password for `/admin` |
+| `NEWS_ADMIN_SECRET` | HMAC secret for the admin session cookie |
+
+3. Deploy to Netlify (or run `netlify dev` linked to the site).
+4. Open `/admin`, sign in, create posts. Publish to refresh the public snapshot.
+
+Local Vite defaults (dev only): password `local-dev-password`, secret `local-dev-secret-change-me`.
+
 ## Phase 2 hooks
 
 | Concern | Ready seam |
@@ -45,6 +81,7 @@ The Vite `base` is controlled by `VITE_BASE` (default `/`).
 | Forms | Netlify form names `contact` / `newsletter` |
 | Membership | `src/membership/` adapter + context |
 | PayPal | `VITE_PAYPAL_BUTTON_ID` env (unused until live SDK) |
+| News | Netlify Functions + DB + Blobs (see above) |
 
 ## Content
 

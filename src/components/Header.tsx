@@ -4,8 +4,11 @@ import logo from '../assets/logo.png'
 
 const MOBILE_NAV_QUERY = '(max-width: 720px)'
 
+const COMPACT_SCROLL_Y = 48
+
 export default function Header() {
   const [open, setOpen] = useState(false)
+  const [compact, setCompact] = useState(false)
   const location = useLocation()
   const toggleRef = useRef<HTMLButtonElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -23,6 +26,26 @@ export default function Header() {
     }
     media.addEventListener('change', onChange)
     return () => media.removeEventListener('change', onChange)
+  }, [])
+
+  useEffect(() => {
+    const mobile = window.matchMedia(MOBILE_NAV_QUERY)
+
+    function updateCompact() {
+      if (mobile.matches) {
+        setCompact(false)
+        return
+      }
+      setCompact(window.scrollY > COMPACT_SCROLL_Y)
+    }
+
+    updateCompact()
+    window.addEventListener('scroll', updateCompact, { passive: true })
+    mobile.addEventListener('change', updateCompact)
+    return () => {
+      window.removeEventListener('scroll', updateCompact)
+      mobile.removeEventListener('change', updateCompact)
+    }
   }, [])
 
   useEffect(() => {
@@ -103,19 +126,32 @@ export default function Header() {
   }
 
   return (
-    <header className={open ? 'site-header header--nav-open' : 'site-header'}>
+    <header
+      className={[
+        'site-header',
+        open ? 'header--nav-open' : '',
+        compact ? 'header--compact' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div
         className="nav-backdrop"
         aria-hidden="true"
         onClick={closeFromOverlay}
       />
       <div className="header-container">
-        <div className="header-left">
+        <div className="header-brand">
+          <p className="header-tagline header-tagline--left">
+            The home of traditional music in the capital since 1973
+          </p>
           <Link to="/" className="logo-link" onClick={closeFromLink}>
             <img src={logo} alt="Edinburgh Folk Club" className="logo" />
           </Link>
-        </div>
-        <div className="header-right">
+          <p className="header-tagline header-tagline--right">
+            Meetings at UCC <br />
+            14 Royal Terrace EH7 5AB
+          </p>
           <button
             ref={toggleRef}
             type="button"
@@ -133,52 +169,52 @@ export default function Header() {
               <span className="nav-toggle__bar" />
             </span>
           </button>
-          <nav
-            ref={navRef}
-            id="site-nav"
-            className="nav-links"
-            aria-label={open ? undefined : 'Main'}
-            aria-labelledby={open ? 'site-nav-title' : undefined}
-            role={open ? 'dialog' : undefined}
-            aria-modal={open ? true : undefined}
-            onClick={(event) => {
-              if (event.target instanceof Element && event.target.closest('a')) {
-                closeFromLink()
-              }
-            }}
-          >
-            <div className="nav-drawer__top">
-              <p id="site-nav-title" className="nav-drawer__title">
-                Menu
-              </p>
-              <button
-                ref={closeRef}
-                type="button"
-                className="nav-drawer__close"
-                onClick={closeFromOverlay}
-              >
-                <span className="visually-hidden">Close menu</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M6 6l12 12M18 6L6 18"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.25"
-                    strokeLinecap="square"
-                  />
-                </svg>
-              </button>
-            </div>
-            <NavLink to="/" end>
-              What&apos;s on?
-            </NavLink>
-            <NavLink to="/about">About</NavLink>
-            <NavLink to="/gallery">Gallery</NavLink>
-            <NavLink to="/other-folk">Other Folk</NavLink>
-            <NavLink to="/contact">Contact</NavLink>
-            <NavLink to="/members">Members</NavLink>
-          </nav>
         </div>
+        <nav
+          ref={navRef}
+          id="site-nav"
+          className="nav-links"
+          aria-label={open ? undefined : 'Main'}
+          aria-labelledby={open ? 'site-nav-title' : undefined}
+          role={open ? 'dialog' : undefined}
+          aria-modal={open ? true : undefined}
+          onClick={(event) => {
+            if (event.target instanceof Element && event.target.closest('a')) {
+              closeFromLink()
+            }
+          }}
+        >
+          <div className="nav-drawer__top">
+            <p id="site-nav-title" className="nav-drawer__title">
+              Menu
+            </p>
+            <button
+              ref={closeRef}
+              type="button"
+              className="nav-drawer__close"
+              onClick={closeFromOverlay}
+            >
+              <span className="visually-hidden">Close menu</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.25"
+                  strokeLinecap="square"
+                />
+              </svg>
+            </button>
+          </div>
+          <NavLink to="/" end>
+            Home
+          </NavLink>
+          <NavLink to="/about">About</NavLink>
+          <NavLink to="/gallery">Gallery</NavLink>
+          <NavLink to="/news">News</NavLink>
+          <NavLink to="/contact">Contact</NavLink>
+          <NavLink to="/members">Members</NavLink>  
+        </nav>
       </div>
     </header>
   )
