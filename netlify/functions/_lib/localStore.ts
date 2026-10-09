@@ -24,10 +24,11 @@ type LocalFile = {
 const seedPost: NewsPost = {
   id: '00000000-0000-4000-8000-000000000001',
   slug: 'welcome-to-the-news',
-  title: 'Welcome to the news',
-  excerpt: 'Club updates will appear here. This sample post is only for local development.',
+  title: 'Lorem ipsum dolor sit amet',
+  excerpt:
+    'Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
   bodyMarkdown:
-    '## Hello\n\nThis is a **sample** news post for local development. Publish real articles from `/admin`.',
+    '## Lorem ipsum\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
   published: true,
   publishedAt: '2026-01-15T12:00:00.000Z',
   createdAt: '2026-01-15T12:00:00.000Z',
