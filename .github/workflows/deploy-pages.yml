@@ -30,6 +30,8 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
+          # Static news/admin stub (no Netlify Functions on Pages)
+          VITE_NEWS_DEMO: '1'
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

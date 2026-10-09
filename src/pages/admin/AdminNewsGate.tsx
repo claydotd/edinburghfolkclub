@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { adminLogin, adminMe } from '../../news/api'
+import { adminLogin, adminMe, isNewsDemo } from '../../news/api'
+
 
 export default function AdminNewsGate() {
   const navigate = useNavigate()
@@ -87,6 +88,12 @@ export default function AdminNewsGate() {
           {submitting ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
+      {isNewsDemo() ? (
+        <p className="form-note">
+          Prototype (GitHub Pages): password is <code>admin</code>. Changes stay
+          in this browser only.
+        </p>
+      ) : null}
     </main>
   )
 }

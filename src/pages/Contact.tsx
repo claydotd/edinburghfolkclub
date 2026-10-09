@@ -3,8 +3,6 @@ import NewsletterSignup from '../components/NewsletterSignup';
 import Reveal from '../components/Reveal';
 import { Link } from 'react-router-dom';
 import { publicUrl } from '../utils/publicUrl';
-import efcmap from '/public/images/efcmap.png';
-
 
 export default function Contact() {
   return (
@@ -74,7 +72,7 @@ export default function Contact() {
         <section id="location" aria-labelledby="location-heading" className="contact-map">
           <h2 id="location-heading">Location</h2>
           <span className="location-link"><p>what3words: <a href="https://w3w.co/zealous.cure.blues" target="_blank" rel="noopener noreferrer">///zealous.cure.blues</a></p></span>
-          <img src={publicUrl(efcmap)} alt="Edinburgh Folk Club" className="contact-map-image" />
+          <img src={publicUrl('/images/efcmap.png')} alt="Edinburgh Folk Club" className="contact-map-image" />
         </section>
         <section className="contact-bottom">
           <img src={publicUrl('/images/efc-crowd.webp')} alt="Edinburgh Folk Club" className="contact-bottom-image" />
