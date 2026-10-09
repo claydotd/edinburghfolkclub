@@ -72,7 +72,7 @@ export default function AdminNewsList() {
       <header className="admin-page-header">
         <div>
           <h1 className="page-title">Posts</h1>
-          <p className="page-lede">Create, publish, and update club news.</p>
+          <p className="page-lede">Create, publish, and update news articles.</p>
         </div>
         <Link to="/admin/new" className="admin-primary-link">
           New post

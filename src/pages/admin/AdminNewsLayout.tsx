@@ -17,7 +17,7 @@ export default function AdminNewsLayout() {
       <header className="admin-shell-header">
         <div className="admin-shell-brand">
           <p className="admin-shell-mark">Edinburgh Folk Club</p>
-          <p className="admin-shell-label">Site admin</p>
+          <p className="admin-shell-label">Site Admin</p>
         </div>
         <div className="admin-shell-tools">
           <Link
