@@ -785,11 +785,34 @@ a {
 }
 
 .home-banner-viewport {
+  display: grid;
   overflow: hidden;
 }
 
+.home-banner-sizer,
 .home-banner-slide {
+  grid-area: 1 / 1;
+}
+
+.home-banner-sizer {
+  display: grid;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.home-banner-sizer > .home-banner-inner {
+  grid-area: 1 / 1;
+}
+
+.home-banner-slide {
+  align-self: stretch;
+  display: flex;
   will-change: transform;
+}
+
+.home-banner-slide > .home-banner-inner {
+  flex: 1 1 auto;
+  width: 100%;
 }
 
 .home-banner-slide--exit {

@@ -47,6 +47,48 @@ function BannerCta({
   )
 }
 
+function BannerControls({
+  index,
+  total,
+  disabled,
+  onPrev,
+  onNext,
+}: {
+  index: number
+  total: number
+  disabled?: boolean
+  onPrev?: () => void
+  onNext?: () => void
+}) {
+  return (
+    <div className="home-banner-controls">
+      <button
+        type="button"
+        className="home-banner-nav"
+        onClick={onPrev}
+        disabled={disabled || !onPrev}
+        aria-label="Previous announcement"
+        tabIndex={onPrev ? undefined : -1}
+      >
+        ‹
+      </button>
+      <span className="home-banner-count" aria-live={onPrev ? 'polite' : undefined}>
+        {index + 1} / {total}
+      </span>
+      <button
+        type="button"
+        className="home-banner-nav"
+        onClick={onNext}
+        disabled={disabled || !onNext}
+        aria-label="Next announcement"
+        tabIndex={onNext ? undefined : -1}
+      >
+        ›
+      </button>
+    </div>
+  )
+}
+
 function prefersReducedMotion() {
   if (typeof window === 'undefined' || !window.matchMedia) return false
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -180,6 +222,19 @@ export default function HomeBanner() {
       aria-label="Club announcements"
     >
       <div className="home-banner-viewport">
+        {/* Invisible stack: sizes viewport to the tallest banner */}
+        <div className="home-banner-sizer" aria-hidden="true">
+          {banners.map((item, itemIndex) => (
+            <div className="home-banner-inner" key={item.id}>
+              <p className="home-banner-text">{item.text}</p>
+              <span className="home-banner-cta">{item.ctaLabel}</span>
+              {showControls ? (
+                <BannerControls index={itemIndex} total={banners.length} />
+              ) : null}
+            </div>
+          ))}
+        </div>
+
         <div className={slideClass} key={banner.id}>
           <div className="home-banner-inner">
             <p className="home-banner-text" aria-live="polite">
@@ -187,29 +242,13 @@ export default function HomeBanner() {
             </p>
             <BannerCta label={banner.ctaLabel} href={banner.ctaHref} />
             {showControls ? (
-              <div className="home-banner-controls">
-                <button
-                  type="button"
-                  className="home-banner-nav"
-                  onClick={() => goTo(index - 1)}
-                  disabled={phase !== 'idle'}
-                  aria-label="Previous announcement"
-                >
-                  ‹
-                </button>
-                <span className="home-banner-count" aria-live="polite">
-                  {index + 1} / {banners.length}
-                </span>
-                <button
-                  type="button"
-                  className="home-banner-nav"
-                  onClick={() => goTo(index + 1)}
-                  disabled={phase !== 'idle'}
-                  aria-label="Next announcement"
-                >
-                  ›
-                </button>
-              </div>
+              <BannerControls
+                index={index}
+                total={banners.length}
+                disabled={phase !== 'idle'}
+                onPrev={() => goTo(index - 1)}
+                onNext={() => goTo(index + 1)}
+              />
             ) : null}
           </div>
         </div>
