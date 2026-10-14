@@ -12,7 +12,7 @@ import type {
 } from './types'
 import { BANNER_COLORS } from './types'
 
-const DATA_KEY = 'efc-news-demo'
+const DATA_KEY = 'efc-news-demo-v2'
 const AUTH_KEY = 'efc-news-demo-auth'
 
 type DemoFile = {
