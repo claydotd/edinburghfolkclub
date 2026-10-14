@@ -67,7 +67,7 @@ export default function AdminNewsGate() {
           <p className="admin-shell-mark">Edinburgh Folk Club</p>
           <h1 className="page-title">Admin sign in</h1>
           <p className="page-lede">
-            Manage news posts and the homepage banner.
+            Manage news posts and homepage banners.
           </p>
         </header>
         <form className="site-form admin-gate-form" onSubmit={onSubmit}>

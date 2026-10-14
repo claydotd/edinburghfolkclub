@@ -1,19 +1,23 @@
-import { DEMO_ADMIN_PASSWORD, DEMO_SEED_BANNER, DEMO_SEED_POSTS } from './demoData'
+import { DEMO_ADMIN_PASSWORD, DEMO_SEED_BANNERS, DEMO_SEED_POSTS } from './demoData'
 import type {
+  BannerColor,
   HomeBanner,
   HomeBannerInput,
+  HomeBannersInput,
+  HomeBannersState,
   NewsPost,
   NewsPostInput,
   NewsSnapshot,
   NewsSnapshotPost,
 } from './types'
+import { BANNER_COLORS } from './types'
 
 const DATA_KEY = 'efc-news-demo'
 const AUTH_KEY = 'efc-news-demo-auth'
 
 type DemoFile = {
   posts: NewsPost[]
-  banner: HomeBanner
+  banner: HomeBannersState
 }
 
 function postToSnapshotPost(post: NewsPost): NewsSnapshotPost {
@@ -42,8 +46,68 @@ function buildSnapshot(posts: NewsPost[]): NewsSnapshot {
 function seedFile(): DemoFile {
   return {
     posts: DEMO_SEED_POSTS.map((p) => ({ ...p })),
-    banner: { ...DEMO_SEED_BANNER },
+    banner: {
+      items: DEMO_SEED_BANNERS.map((b) => ({ ...b })),
+      updatedAt: DEMO_SEED_BANNERS[0]?.updatedAt ?? new Date().toISOString(),
+    },
   }
+}
+
+function isBannerColor(value: unknown): value is BannerColor {
+  return (
+    typeof value === 'string' &&
+    (BANNER_COLORS as readonly string[]).includes(value)
+  )
+}
+
+function coerceBanners(value: unknown): HomeBannersState {
+  if (!value || typeof value !== 'object') {
+    return seedFile().banner
+  }
+  const raw = value as Record<string, unknown>
+
+  if (Array.isArray(raw.items)) {
+    const items = raw.items
+      .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+      .map((item, index) => ({
+        id: typeof item.id === 'string' ? item.id : `banner-${index + 1}`,
+        enabled: Boolean(item.enabled),
+        text: typeof item.text === 'string' ? item.text : '',
+        ctaLabel: typeof item.ctaLabel === 'string' ? item.ctaLabel : '',
+        ctaHref: typeof item.ctaHref === 'string' ? item.ctaHref : '',
+        color: isBannerColor(item.color) ? item.color : ('thistle' as BannerColor),
+        updatedAt:
+          typeof item.updatedAt === 'string'
+            ? item.updatedAt
+            : new Date().toISOString(),
+      }))
+    return {
+      items,
+      updatedAt:
+        typeof raw.updatedAt === 'string'
+          ? raw.updatedAt
+          : new Date().toISOString(),
+    }
+  }
+
+  // Legacy single-banner object from older demo storage
+  if ('text' in raw || 'enabled' in raw || 'ctaLabel' in raw) {
+    const item: HomeBanner = {
+      id: typeof raw.id === 'string' ? raw.id : 'legacy',
+      enabled: Boolean(raw.enabled),
+      text: typeof raw.text === 'string' ? raw.text : '',
+      ctaLabel: typeof raw.ctaLabel === 'string' ? raw.ctaLabel : '',
+      ctaHref: typeof raw.ctaHref === 'string' ? raw.ctaHref : '',
+      color: isBannerColor(raw.color) ? raw.color : 'thistle',
+      updatedAt:
+        typeof raw.updatedAt === 'string'
+          ? raw.updatedAt
+          : new Date().toISOString(),
+    }
+    return { items: [item], updatedAt: item.updatedAt }
+  }
+
+  return seedFile().banner
 }
 
 function readFile(): DemoFile {
@@ -57,25 +121,7 @@ function readFile(): DemoFile {
     const parsed = JSON.parse(raw) as Partial<DemoFile>
     return {
       posts: Array.isArray(parsed.posts) ? parsed.posts : seedFile().posts,
-      banner:
-        parsed.banner && typeof parsed.banner === 'object'
-          ? {
-              enabled: Boolean(parsed.banner.enabled),
-              text: typeof parsed.banner.text === 'string' ? parsed.banner.text : '',
-              ctaLabel:
-                typeof parsed.banner.ctaLabel === 'string'
-                  ? parsed.banner.ctaLabel
-                  : '',
-              ctaHref:
-                typeof parsed.banner.ctaHref === 'string'
-                  ? parsed.banner.ctaHref
-                  : '',
-              updatedAt:
-                typeof parsed.banner.updatedAt === 'string'
-                  ? parsed.banner.updatedAt
-                  : new Date().toISOString(),
-            }
-          : { ...DEMO_SEED_BANNER },
+      banner: coerceBanners(parsed.banner),
     }
   } catch {
     return seedFile()
@@ -100,27 +146,68 @@ function validateInput(input: NewsPostInput): void {
   }
 }
 
-function validateBannerInput(input: HomeBannerInput): void {
+function validateCtaHref(ctaHref: string): void {
+  if (!ctaHref) return
+  const ok =
+    ctaHref.startsWith('/') ||
+    ctaHref.startsWith('https://') ||
+    ctaHref.startsWith('http://') ||
+    ctaHref.startsWith('mailto:')
+  if (!ok) {
+    throw new Error('CTA link must be a site path (/…), http(s) URL, or mailto:')
+  }
+}
+
+function validateBannerItem(input: HomeBannerInput, index: number): void {
+  const label = `Banner ${index + 1}`
   const enabled = Boolean(input.enabled)
   const text = (input.text ?? '').trim()
   const ctaLabel = (input.ctaLabel ?? '').trim()
   const ctaHref = (input.ctaHref ?? '').trim()
 
   if (enabled) {
-    if (!text) throw new Error('Banner text is required when enabled')
-    if (!ctaLabel) throw new Error('CTA label is required when enabled')
-    if (!ctaHref) throw new Error('CTA link is required when enabled')
+    if (!text) throw new Error(`${label}: text is required when enabled`)
+    if (!ctaLabel) throw new Error(`${label}: CTA label is required when enabled`)
+    if (!ctaHref) throw new Error(`${label}: CTA link is required when enabled`)
   }
 
-  if (ctaHref) {
-    const ok =
-      ctaHref.startsWith('/') ||
-      ctaHref.startsWith('https://') ||
-      ctaHref.startsWith('http://') ||
-      ctaHref.startsWith('mailto:')
-    if (!ok) {
-      throw new Error('CTA link must be a site path (/…), http(s) URL, or mailto:')
-    }
+  if (input.color != null && !isBannerColor(input.color)) {
+    throw new Error(`${label}: colour must be one of ${BANNER_COLORS.join(', ')}`)
+  }
+
+  try {
+    validateCtaHref(ctaHref)
+  } catch (err) {
+    throw new Error(
+      `${label}: ${err instanceof Error ? err.message : 'Invalid CTA link'}`,
+    )
+  }
+}
+
+function validateBannersInput(input: HomeBannersInput): void {
+  if (!Array.isArray(input.items)) {
+    throw new Error('Banners list is required')
+  }
+  if (input.items.length > 12) {
+    throw new Error('A maximum of 12 banners is allowed')
+  }
+  input.items.forEach((item, index) => validateBannerItem(item, index))
+}
+
+function normalizeBanner(
+  input: HomeBannerInput,
+  existing?: HomeBanner,
+): HomeBanner {
+  return {
+    id: (input.id ?? existing?.id ?? crypto.randomUUID()).trim() || crypto.randomUUID(),
+    enabled: Boolean(input.enabled),
+    text: (input.text ?? existing?.text ?? '').trim(),
+    ctaLabel: (input.ctaLabel ?? existing?.ctaLabel ?? '').trim(),
+    ctaHref: (input.ctaHref ?? existing?.ctaHref ?? '').trim(),
+    color: isBannerColor(input.color)
+      ? input.color
+      : existing?.color ?? 'thistle',
+    updatedAt: new Date().toISOString(),
   }
 }
 
@@ -181,7 +268,7 @@ export async function getPublishedPost(
   return { post, updatedAt: snapshot.updatedAt }
 }
 
-export async function getHomeBanner(): Promise<HomeBanner> {
+export async function getHomeBanners(): Promise<HomeBannersState> {
   return delay(readFile().banner)
 }
 
@@ -245,17 +332,18 @@ export async function deletePost(id: string): Promise<void> {
   await delay(undefined)
 }
 
-export async function updateHomeBanner(
-  input: HomeBannerInput,
-): Promise<HomeBanner> {
+export async function updateHomeBanners(
+  input: HomeBannersInput,
+): Promise<HomeBannersState> {
   requireAuth()
-  validateBannerInput(input)
+  validateBannersInput(input)
   const data = readFile()
+  const existingById = new Map(data.banner.items.map((item) => [item.id, item]))
+  const items = input.items.map((raw) =>
+    normalizeBanner(raw, raw.id ? existingById.get(raw.id) : undefined),
+  )
   data.banner = {
-    enabled: Boolean(input.enabled),
-    text: (input.text ?? data.banner.text ?? '').trim(),
-    ctaLabel: (input.ctaLabel ?? data.banner.ctaLabel ?? '').trim(),
-    ctaHref: (input.ctaHref ?? data.banner.ctaHref ?? '').trim(),
+    items,
     updatedAt: new Date().toISOString(),
   }
   writeFile(data)

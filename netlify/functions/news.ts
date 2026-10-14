@@ -14,8 +14,8 @@ export const handler: Handler = async (event) => {
   try {
     const resource = event.queryStringParameters?.resource?.trim()
     if (resource === 'banner') {
-      const banner = await newsStore.getBanner()
-      return json(200, { banner }, publicCacheHeaders())
+      const banners = await newsStore.getBanner()
+      return json(200, { banners }, publicCacheHeaders())
     }
 
     const snapshot = await newsStore.getPublicSnapshot()

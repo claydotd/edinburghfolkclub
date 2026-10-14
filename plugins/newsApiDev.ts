@@ -10,7 +10,12 @@ import {
 import { localStore } from '../netlify/functions/_lib/localStore.ts'
 import type {
   HomeBannerInput,
+  HomeBannersInput,
   NewsPostInput,
+} from '../netlify/functions/_lib/types.ts'
+import {
+  BANNER_COLORS,
+  isBannerColor,
 } from '../netlify/functions/_lib/types.ts'
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -45,29 +50,56 @@ function validateInput(body: Partial<NewsPostInput>): string | null {
   return null
 }
 
-function validateBannerInput(body: Partial<HomeBannerInput>): string | null {
+function validateCtaHref(ctaHref: string): string | null {
+  if (!ctaHref) return null
+  const ok =
+    ctaHref.startsWith('/') ||
+    ctaHref.startsWith('https://') ||
+    ctaHref.startsWith('http://') ||
+    ctaHref.startsWith('mailto:')
+  if (!ok) {
+    return 'CTA link must be a site path (/…), http(s) URL, or mailto:'
+  }
+  return null
+}
+
+function validateBannerItem(
+  body: Partial<HomeBannerInput>,
+  index: number,
+): string | null {
+  const label = `Banner ${index + 1}`
   const enabled = Boolean(body.enabled)
   const text = (body.text ?? '').trim()
   const ctaLabel = (body.ctaLabel ?? '').trim()
   const ctaHref = (body.ctaHref ?? '').trim()
 
   if (enabled) {
-    if (!text) return 'Banner text is required when enabled'
-    if (!ctaLabel) return 'CTA label is required when enabled'
-    if (!ctaHref) return 'CTA link is required when enabled'
+    if (!text) return `${label}: text is required when enabled`
+    if (!ctaLabel) return `${label}: CTA label is required when enabled`
+    if (!ctaHref) return `${label}: CTA link is required when enabled`
   }
 
-  if (ctaHref) {
-    const ok =
-      ctaHref.startsWith('/') ||
-      ctaHref.startsWith('https://') ||
-      ctaHref.startsWith('http://') ||
-      ctaHref.startsWith('mailto:')
-    if (!ok) {
-      return 'CTA link must be a site path (/…), http(s) URL, or mailto:'
-    }
+  if (body.color != null && !isBannerColor(body.color)) {
+    return `${label}: colour must be one of ${BANNER_COLORS.join(', ')}`
   }
 
+  const hrefError = validateCtaHref(ctaHref)
+  if (hrefError) return `${label}: ${hrefError}`
+
+  return null
+}
+
+function validateBannersInput(body: Partial<HomeBannersInput>): string | null {
+  if (!Array.isArray(body.items)) {
+    return 'Banners list is required'
+  }
+  if (body.items.length > 12) {
+    return 'A maximum of 12 banners is allowed'
+  }
+  for (let i = 0; i < body.items.length; i++) {
+    const error = validateBannerItem(body.items[i] ?? {}, i)
+    if (error) return error
+  }
   return null
 }
 
@@ -82,8 +114,8 @@ async function handleNews(req: IncomingMessage, res: ServerResponse, url: URL) {
   }
 
   if (url.searchParams.get('resource')?.trim() === 'banner') {
-    const banner = await localStore.getBanner()
-    sendJson(res, 200, { banner })
+    const banners = await localStore.getBanner()
+    sendJson(res, 200, { banners })
     return
   }
 
@@ -143,22 +175,22 @@ async function handleAdmin(req: IncomingMessage, res: ServerResponse, url: URL) 
 
   if (action === 'banner') {
     if (req.method === 'GET') {
-      const banner = await localStore.getBanner()
-      sendJson(res, 200, { banner })
+      const banners = await localStore.getBanner()
+      sendJson(res, 200, { banners })
       return
     }
     if (req.method === 'PUT') {
       const raw = await readBody(req)
       const body = raw
-        ? (JSON.parse(raw) as HomeBannerInput)
-        : ({} as HomeBannerInput)
-      const error = validateBannerInput(body)
+        ? (JSON.parse(raw) as HomeBannersInput)
+        : ({ items: [] } as HomeBannersInput)
+      const error = validateBannersInput(body)
       if (error) {
         sendJson(res, 400, { error })
         return
       }
-      const banner = await localStore.setBanner(body)
-      sendJson(res, 200, { banner })
+      const banners = await localStore.setBanner(body)
+      sendJson(res, 200, { banners })
       return
     }
     sendJson(res, 405, { error: 'Method not allowed' })

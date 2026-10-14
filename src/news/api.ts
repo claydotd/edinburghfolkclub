@@ -1,7 +1,7 @@
 import * as demo from './demoStore'
 import type {
-  HomeBanner,
-  HomeBannerInput,
+  HomeBannersInput,
+  HomeBannersState,
   NewsPost,
   NewsPostInput,
   NewsSnapshot,
@@ -128,36 +128,36 @@ export async function adminDeletePost(id: string): Promise<void> {
   await parseJson(res)
 }
 
-export async function fetchHomeBanner(): Promise<HomeBanner> {
-  if (isNewsDemo()) return demo.getHomeBanner()
+export async function fetchHomeBanners(): Promise<HomeBannersState> {
+  if (isNewsDemo()) return demo.getHomeBanners()
   const res = await fetch(`${NEWS_URL}?resource=banner`, {
     credentials: 'same-origin',
   })
-  const data = await parseJson<{ banner: HomeBanner }>(res)
-  return data.banner
+  const data = await parseJson<{ banners: HomeBannersState }>(res)
+  return data.banners
 }
 
-export async function adminGetHomeBanner(): Promise<HomeBanner> {
-  if (isNewsDemo()) return demo.getHomeBanner()
+export async function adminGetHomeBanners(): Promise<HomeBannersState> {
+  if (isNewsDemo()) return demo.getHomeBanners()
   const res = await fetch(`${ADMIN_URL}?action=banner`, {
     credentials: 'include',
   })
-  const data = await parseJson<{ banner: HomeBanner }>(res)
-  return data.banner
+  const data = await parseJson<{ banners: HomeBannersState }>(res)
+  return data.banners
 }
 
-export async function adminUpdateHomeBanner(
-  input: HomeBannerInput,
-): Promise<HomeBanner> {
-  if (isNewsDemo()) return demo.updateHomeBanner(input)
+export async function adminUpdateHomeBanners(
+  input: HomeBannersInput,
+): Promise<HomeBannersState> {
+  if (isNewsDemo()) return demo.updateHomeBanners(input)
   const res = await fetch(`${ADMIN_URL}?action=banner`, {
     method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   })
-  const data = await parseJson<{ banner: HomeBanner }>(res)
-  return data.banner
+  const data = await parseJson<{ banners: HomeBannersState }>(res)
+  return data.banners
 }
 
 export function slugifyTitle(title: string): string {

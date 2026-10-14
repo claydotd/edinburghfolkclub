@@ -38,7 +38,7 @@ export default function AdminNewsLayout() {
           All posts
         </NavLink>
         <NavLink to="/admin/new">New post</NavLink>
-        <NavLink to="/admin/banner">Homepage banner</NavLink>
+        <NavLink to="/admin/banner">Homepage banners</NavLink>
       </nav>
       <Outlet />
     </div>

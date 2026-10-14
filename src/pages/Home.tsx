@@ -15,6 +15,9 @@ type Gig = (typeof gigs.gigs)[number];
 
 const gigsData = gigs.gigs;
 
+/** When true, "More details" opens the artist website if set; when false, always opens the modal. */
+const preferArtistWebsite = true;
+
 function localDateString(d = new Date()) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -82,13 +85,26 @@ export default function Home() {
                     </p>
                     <p><em className="flyer-prices-note">*Tickets Scotland sales will incur a booking fee</em></p>
                   <div className="flyer-actions">
-                    <button
-                      type="button"
-                      className="flyer-more"
-                      onClick={() => setSelectedGig(gig)}
-                    >
-                      More details
-                    </button>
+                    {preferArtistWebsite &&
+                    'website' in gig &&
+                    gig.website ? (
+                      <a
+                        className="flyer-more"
+                        href={gig.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        More details
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        className="flyer-more"
+                        onClick={() => setSelectedGig(gig)}
+                      >
+                        More details
+                      </button>
+                    )}
                     {'tickets' in gig && gig.tickets && (
                       <a
                         className="flyer-tickets"

@@ -753,13 +753,84 @@ a {
 
 /* --- Homepage news banner (below nav) --- */
 .home-banner {
+  --banner-bg: var(--thistle);
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
   box-sizing: border-box;
-  background: var(--thistle);
+  background: var(--banner-bg);
   color: var(--white);
   border-bottom: 1px solid var(--ink);
+  transition: background-color 0.35s ease;
+}
+
+.home-banner--thistle {
+  --banner-bg: var(--thistle);
+}
+
+.home-banner--moss {
+  --banner-bg: var(--moss);
+}
+
+.home-banner--berry {
+  --banner-bg: var(--berry);
+}
+
+.home-banner--heather {
+  --banner-bg: var(--heather);
+}
+
+.home-banner--ink {
+  --banner-bg: var(--ink);
+}
+
+.home-banner-viewport {
+  overflow: hidden;
+}
+
+.home-banner-slide {
+  will-change: transform;
+}
+
+.home-banner-slide--exit {
+  animation: home-banner-exit 0.38s ease-in forwards;
+}
+
+.home-banner-slide--enter {
+  animation: home-banner-enter 0.42s ease-out forwards;
+}
+
+@keyframes home-banner-exit {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes home-banner-enter {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-banner {
+    transition: none;
+  }
+
+  .home-banner-slide--exit,
+  .home-banner-slide--enter {
+    animation: none;
+  }
 }
 
 .home-banner-inner {
@@ -805,6 +876,77 @@ a {
 .home-banner-cta:focus-visible {
   outline: 2px solid var(--white);
   outline-offset: 2px;
+}
+
+.home-banner-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.home-banner-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--white) 55%, transparent);
+  background: color-mix(in srgb, var(--ink) 22%, transparent);
+  color: var(--white);
+  font-family: var(--sans);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.home-banner-nav:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 40%, transparent);
+  border-color: var(--white);
+}
+
+.home-banner-nav:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.home-banner-nav:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.home-banner-count {
+  min-width: 2.6rem;
+  text-align: center;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--white) 88%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-banner-progress {
+  width: 100%;
+  height: 3px;
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  overflow: hidden;
+}
+
+.home-banner-progress-bar {
+  width: 100%;
+  height: 100%;
+  background: var(--gold);
+  transform-origin: left center;
+  transform: scaleX(0);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-banner-progress-bar {
+    transition: none;
+  }
 }
 
 /* --- Welcome blurb --- */
@@ -955,6 +1097,7 @@ a {
   color: var(--accent);
   cursor: pointer;
   letter-spacing: 0.04em;
+  text-decoration: none;
   border-bottom: 1px solid transparent;
   transition:
     border-color var(--transition-time) ease,
@@ -3650,6 +3793,187 @@ a.location-link:hover,
   background: var(--moss-wash);
   border: 1px solid color-mix(in srgb, var(--moss) 28%, transparent);
   padding: 0.55rem 0.75rem;
+}
+
+.admin-banner-list {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admin-banner-card {
+  --banner-swatch: var(--thistle);
+  margin: 0;
+  padding: 1rem 1.1rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-left: 5px solid var(--banner-swatch);
+  background: color-mix(in srgb, var(--white) 78%, transparent);
+  min-inline-size: 0;
+}
+
+.admin-banner-card--thistle {
+  --banner-swatch: var(--thistle);
+}
+
+.admin-banner-card--moss {
+  --banner-swatch: var(--moss);
+}
+
+.admin-banner-card--berry {
+  --banner-swatch: var(--berry);
+}
+
+.admin-banner-card--heather {
+  --banner-swatch: var(--heather);
+}
+
+.admin-banner-card--ink {
+  --banner-swatch: var(--ink);
+}
+
+.admin-banner-card-legend {
+  padding: 0 0.35rem;
+  font-family: var(--heading);
+  font-size: 1.05rem;
+  color: var(--text-h);
+}
+
+.admin-banner-card-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.admin-banner-enabled {
+  margin: 0;
+  flex: 1 1 12rem;
+}
+
+.admin-banner-order {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.admin-banner-order-btn,
+.admin-banner-remove,
+.admin-banner-add {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: var(--weight-bold);
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.admin-banner-order-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-banner-remove {
+  background: var(--berry-wash);
+  border-color: color-mix(in srgb, var(--berry) 45%, var(--ink));
+}
+
+.admin-banner-add {
+  background: var(--gold);
+}
+
+.admin-banner-add:hover,
+.admin-banner-order-btn:hover:not(:disabled),
+.admin-banner-remove:hover {
+  background: var(--yellow);
+}
+
+.admin-banner-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin-banner-add-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.admin-banner-colors {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.admin-banner-colors legend {
+  margin-bottom: 0.45rem;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-h);
+}
+
+.admin-banner-color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.admin-banner-color-option {
+  --swatch: var(--thistle);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem 0.35rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  background: color-mix(in srgb, var(--white) 70%, transparent);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-h);
+}
+
+.admin-banner-color-option--thistle {
+  --swatch: var(--thistle);
+}
+
+.admin-banner-color-option--moss {
+  --swatch: var(--moss);
+}
+
+.admin-banner-color-option--berry {
+  --swatch: var(--berry);
+}
+
+.admin-banner-color-option--heather {
+  --swatch: var(--heather);
+}
+
+.admin-banner-color-option--ink {
+  --swatch: var(--ink);
+}
+
+.admin-banner-color-option input {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--ink) 35%, transparent);
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 2px var(--white);
+}
+
+.admin-banner-color-option input:checked {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.admin-banner-color-option:has(input:checked) {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--swatch) 12%, var(--white));
 }
 
 /* --- Admin gate (sign-in) --- */

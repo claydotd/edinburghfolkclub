@@ -1,14 +1,15 @@
 import { getStore } from '@netlify/blobs'
 import type {
-  HomeBanner,
-  HomeBannerInput,
+  HomeBannersInput,
+  HomeBannersState,
   NewsPost,
   NewsPostInput,
   NewsSnapshot,
 } from './types.ts'
 import {
-  emptyHomeBanner,
-  normalizeHomeBanner,
+  coerceHomeBanners,
+  emptyHomeBanners,
+  normalizeHomeBanners,
   postToSnapshotPost,
   rowToPost,
   type DbNewsRow,
@@ -156,36 +157,24 @@ export const newsStore = {
     await rebuildSnapshotFromDb()
   },
 
-  async getBanner(): Promise<HomeBanner> {
+  async getBanner(): Promise<HomeBannersState> {
     if (shouldUseLocalStore()) return localStore.getBanner()
     try {
       const store = await blobStore()
       const banner = await store.get(BLOB_BANNER_KEY, { type: 'json' })
-      if (banner && typeof banner === 'object') {
-        const raw = banner as Partial<HomeBanner>
-        return {
-          enabled: Boolean(raw.enabled),
-          text: typeof raw.text === 'string' ? raw.text : '',
-          ctaLabel: typeof raw.ctaLabel === 'string' ? raw.ctaLabel : '',
-          ctaHref: typeof raw.ctaHref === 'string' ? raw.ctaHref : '',
-          updatedAt:
-            typeof raw.updatedAt === 'string'
-              ? raw.updatedAt
-              : new Date().toISOString(),
-        }
-      }
+      return coerceHomeBanners(banner)
     } catch {
       // Fall through
     }
-    return emptyHomeBanner()
+    return emptyHomeBanners()
   },
 
-  async setBanner(input: HomeBannerInput): Promise<HomeBanner> {
+  async setBanner(input: HomeBannersInput): Promise<HomeBannersState> {
     if (shouldUseLocalStore()) return localStore.setBanner(input)
     const existing = await this.getBanner()
-    const banner = normalizeHomeBanner(input, existing)
+    const banners = normalizeHomeBanners(input, existing)
     const store = await blobStore()
-    await store.setJSON(BLOB_BANNER_KEY, banner)
-    return banner
+    await store.setJSON(BLOB_BANNER_KEY, banners)
+    return banners
   },
 }

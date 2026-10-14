@@ -3,13 +3,18 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type {
-  HomeBanner,
-  HomeBannerInput,
+  HomeBannersInput,
+  HomeBannersState,
   NewsPost,
   NewsPostInput,
   NewsSnapshot,
 } from './types.ts'
-import { emptyHomeBanner, normalizeHomeBanner, postToSnapshotPost } from './types.ts'
+import {
+  coerceHomeBanners,
+  emptyHomeBanners,
+  normalizeHomeBanners,
+  postToSnapshotPost,
+} from './types.ts'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
 const dataDir = path.join(rootDir, '.data')
@@ -18,7 +23,7 @@ const dataFile = path.join(dataDir, 'news-local.json')
 type LocalFile = {
   posts: NewsPost[]
   snapshot: NewsSnapshot
-  banner: HomeBanner
+  banner: HomeBannersState
 }
 
 const seedPost: NewsPost = {
@@ -51,19 +56,6 @@ function buildSnapshot(posts: NewsPost[]): NewsSnapshot {
   return { updatedAt: new Date().toISOString(), posts: published }
 }
 
-function coerceBanner(value: unknown): HomeBanner {
-  if (!value || typeof value !== 'object') return emptyHomeBanner()
-  const raw = value as Partial<HomeBanner>
-  return {
-    enabled: Boolean(raw.enabled),
-    text: typeof raw.text === 'string' ? raw.text : '',
-    ctaLabel: typeof raw.ctaLabel === 'string' ? raw.ctaLabel : '',
-    ctaHref: typeof raw.ctaHref === 'string' ? raw.ctaHref : '',
-    updatedAt:
-      typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString(),
-  }
-}
-
 function readFile(): LocalFile {
   try {
     if (!fs.existsSync(dataFile)) {
@@ -71,7 +63,7 @@ function readFile(): LocalFile {
       const initial: LocalFile = {
         posts,
         snapshot: buildSnapshot(posts),
-        banner: emptyHomeBanner(),
+        banner: emptyHomeBanners(),
       }
       writeFile(initial)
       return initial
@@ -84,10 +76,10 @@ function readFile(): LocalFile {
         parsed.snapshot && Array.isArray(parsed.snapshot.posts)
           ? parsed.snapshot
           : emptySnapshot(),
-      banner: coerceBanner(parsed.banner),
+      banner: coerceHomeBanners(parsed.banner),
     }
   } catch {
-    return { posts: [], snapshot: emptySnapshot(), banner: emptyHomeBanner() }
+    return { posts: [], snapshot: emptySnapshot(), banner: emptyHomeBanners() }
   }
 }
 
@@ -172,13 +164,13 @@ export const localStore = {
     return data.snapshot
   },
 
-  async getBanner(): Promise<HomeBanner> {
+  async getBanner(): Promise<HomeBannersState> {
     return readFile().banner
   },
 
-  async setBanner(input: HomeBannerInput): Promise<HomeBanner> {
+  async setBanner(input: HomeBannersInput): Promise<HomeBannersState> {
     const data = readFile()
-    const banner = normalizeHomeBanner(input, data.banner)
+    const banner = normalizeHomeBanners(input, data.banner)
     data.banner = banner
     writeFile(data)
     return banner

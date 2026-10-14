@@ -108,13 +108,26 @@ export const DEMO_SEED_POSTS: NewsPost[] = [
   },
 ]
 
-export const DEMO_SEED_BANNER: HomeBanner = {
-  enabled: true,
-  text: 'The annual Hamish Henderson Lecture is happening on (date)',
-  ctaLabel: 'Find out more',
-  ctaHref: '/news',
-  updatedAt: '2026-10-09T12:00:00.000Z',
-}
+export const DEMO_SEED_BANNERS: HomeBanner[] = [
+  {
+    id: 'demo-banner-1',
+    enabled: true,
+    text: 'The annual Hamish Henderson Lecture is happening on (date)',
+    ctaLabel: 'Find out more',
+    ctaHref: '/news',
+    color: 'thistle',
+    updatedAt: '2026-10-09T12:00:00.000Z',
+  },
+  {
+    id: 'demo-banner-2',
+    enabled: true,
+    text: 'Membership renewals are open for the new season',
+    ctaLabel: 'Join or renew',
+    ctaHref: '/members',
+    color: 'moss',
+    updatedAt: '2026-10-09T12:00:00.000Z',
+  },
+]
 
 /** Prototype password for static demo / GitHub Pages (not for production). */
 export const DEMO_ADMIN_PASSWORD = 'admin'
