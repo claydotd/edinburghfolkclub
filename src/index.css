@@ -1764,7 +1764,7 @@ a {
 
 /* --- Gallery page --- */
 .gallery-page {
-  width: min(100%, 960px);
+  width: min(100%, 1200px);
 }
 
 /* --- Browse mode toggle --- */
@@ -1977,6 +1977,11 @@ a {
 /* --- Photo album --- */
 .gallery-page .react-photo-album--photo {
   background: color-mix(in srgb, var(--ink) 6%, transparent);
+  cursor: pointer;
+}
+
+.gallery-page .react-photo-album button {
+  cursor: pointer;
 }
 
 .gallery-page .react-photo-album img {
@@ -1984,6 +1989,125 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity var(--transition-time) ease;
+}
+
+.gallery-page .react-photo-album button:hover img,
+.gallery-page .react-photo-album--photo:hover img {
+  opacity: 0.9;
+}
+
+/* --- Gallery lightbox --- */
+.gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.gallery-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+  cursor: pointer;
+}
+
+.gallery-lightbox__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1100px);
+  max-height: min(92svh, 900px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem 0.85rem 1rem;
+  background: color-mix(in srgb, var(--cream) 45%, var(--white));
+  border: 1.5px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.gallery-lightbox__close {
+  align-self: flex-end;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  color: var(--accent);
+  background: transparent;
+  border: 0;
+  padding: 0.15rem 0;
+  cursor: pointer;
+}
+
+.gallery-lightbox__close:hover {
+  text-decoration: underline;
+}
+
+.gallery-lightbox__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.gallery-lightbox__figure {
+  margin: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.gallery-lightbox__image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: min(78svh, 780px);
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.gallery-lightbox__caption {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 1rem;
+  color: var(--text-h);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gallery-lightbox__backdrop {
+    animation: gallery-lightbox-fade 0.24s ease both;
+  }
+
+  .gallery-lightbox__dialog {
+    animation: gallery-lightbox-rise 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes gallery-lightbox-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gallery-lightbox-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* --- Gallery — desktop timeline --- */

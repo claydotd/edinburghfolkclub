@@ -1,109 +1,155 @@
 {
   "years": [
-    "2025",
-    "2024"
+    "2026"
   ],
   "artists": [
-    {
-      "slug": "airdan",
-      "name": "Airdan",
-      "years": [
-        "2024"
-      ]
-    },
     {
       "slug": "alan-reid",
       "name": "Alan Reid",
       "years": [
-        "2025"
+        "2026"
       ]
     },
     {
-      "slug": "christine-kidd",
-      "name": "Christine Kidd",
+      "slug": "christine-kydd",
+      "name": "Christine Kydd",
       "years": [
-        "2025"
-      ]
-    },
-    {
-      "slug": "iona-fyfe",
-      "name": "Iona Fyfe",
-      "years": [
-        "2024"
-      ]
-    },
-    {
-      "slug": "pete-morton",
-      "name": "Pete Morton",
-      "years": [
-        "2025"
+        "2026"
       ]
     }
   ],
   "photos": [
     {
-      "src": "/gallery/2025/alan-reid+christine-kidd/alan-christine.webp",
-      "year": "2025",
-      "folderSlug": "alan-reid+christine-kidd",
+      "src": "/gallery/2026/alan-reid/4-IMG_1298.jpg",
+      "year": "2026",
+      "folderSlug": "alan-reid",
+      "artists": [
+        {
+          "slug": "alan-reid",
+          "name": "Alan Reid"
+        }
+      ],
+      "artistLabel": "Alan Reid",
+      "filename": "4-IMG_1298.jpg",
+      "width": 2048,
+      "height": 1365
+    },
+    {
+      "src": "/gallery/2026/alan-reid/8-IMG_1311.jpg",
+      "year": "2026",
+      "folderSlug": "alan-reid",
+      "artists": [
+        {
+          "slug": "alan-reid",
+          "name": "Alan Reid"
+        }
+      ],
+      "artistLabel": "Alan Reid",
+      "filename": "8-IMG_1311.jpg",
+      "width": 2048,
+      "height": 1365
+    },
+    {
+      "src": "/gallery/2026/alan-reid+christine-kydd/2-IMG_1289.jpg",
+      "year": "2026",
+      "folderSlug": "alan-reid+christine-kydd",
       "artists": [
         {
           "slug": "alan-reid",
           "name": "Alan Reid"
         },
         {
-          "slug": "christine-kidd",
-          "name": "Christine Kidd"
+          "slug": "christine-kydd",
+          "name": "Christine Kydd"
         }
       ],
-      "artistLabel": "Alan Reid & Christine Kidd",
-      "filename": "alan-christine.webp",
-      "width": 1269,
-      "height": 738
+      "artistLabel": "Alan Reid & Christine Kydd",
+      "filename": "2-IMG_1289.jpg",
+      "width": 2048,
+      "height": 1322
     },
     {
-      "src": "/gallery/2025/pete-morton/pete-morton.jpg",
-      "year": "2025",
-      "folderSlug": "pete-morton",
+      "src": "/gallery/2026/alan-reid+christine-kydd/7-IMG_1310.jpg",
+      "year": "2026",
+      "folderSlug": "alan-reid+christine-kydd",
       "artists": [
         {
-          "slug": "pete-morton",
-          "name": "Pete Morton"
+          "slug": "alan-reid",
+          "name": "Alan Reid"
+        },
+        {
+          "slug": "christine-kydd",
+          "name": "Christine Kydd"
         }
       ],
-      "artistLabel": "Pete Morton",
-      "filename": "pete-morton.jpg",
-      "width": 4767,
-      "height": 3635
+      "artistLabel": "Alan Reid & Christine Kydd",
+      "filename": "7-IMG_1310.jpg",
+      "width": 2048,
+      "height": 1365
     },
     {
-      "src": "/gallery/2024/airdan/airdan.webp",
-      "year": "2024",
-      "folderSlug": "airdan",
+      "src": "/gallery/2026/alan-reid+christine-kydd/9-IMG_1315.jpg",
+      "year": "2026",
+      "folderSlug": "alan-reid+christine-kydd",
       "artists": [
         {
-          "slug": "airdan",
-          "name": "Airdan"
+          "slug": "alan-reid",
+          "name": "Alan Reid"
+        },
+        {
+          "slug": "christine-kydd",
+          "name": "Christine Kydd"
         }
       ],
-      "artistLabel": "Airdan",
-      "filename": "airdan.webp",
-      "width": 1172,
-      "height": 814
+      "artistLabel": "Alan Reid & Christine Kydd",
+      "filename": "9-IMG_1315.jpg",
+      "width": 2048,
+      "height": 1365
     },
     {
-      "src": "/gallery/2024/iona-fyfe/ionafyfe.jpg.webp",
-      "year": "2024",
-      "folderSlug": "iona-fyfe",
+      "src": "/gallery/2026/christine-kydd/3-IMG_1294.jpg",
+      "year": "2026",
+      "folderSlug": "christine-kydd",
       "artists": [
         {
-          "slug": "iona-fyfe",
-          "name": "Iona Fyfe"
+          "slug": "christine-kydd",
+          "name": "Christine Kydd"
         }
       ],
-      "artistLabel": "Iona Fyfe",
-      "filename": "ionafyfe.jpg.webp",
-      "width": 1008,
-      "height": 567
+      "artistLabel": "Christine Kydd",
+      "filename": "3-IMG_1294.jpg",
+      "width": 1365,
+      "height": 2048
+    },
+    {
+      "src": "/gallery/2026/christine-kydd/5-IMG_1299.jpg",
+      "year": "2026",
+      "folderSlug": "christine-kydd",
+      "artists": [
+        {
+          "slug": "christine-kydd",
+          "name": "Christine Kydd"
+        }
+      ],
+      "artistLabel": "Christine Kydd",
+      "filename": "5-IMG_1299.jpg",
+      "width": 2048,
+      "height": 1365
+    },
+    {
+      "src": "/gallery/2026/christine-kydd/6-IMG_1300.jpg",
+      "year": "2026",
+      "folderSlug": "christine-kydd",
+      "artists": [
+        {
+          "slug": "christine-kydd",
+          "name": "Christine Kydd"
+        }
+      ],
+      "artistLabel": "Christine Kydd",
+      "filename": "6-IMG_1300.jpg",
+      "width": 2048,
+      "height": 1365
     }
   ]
 }

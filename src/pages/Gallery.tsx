@@ -9,11 +9,13 @@ import { useSearchParams } from 'react-router-dom'
 import { RowsPhotoAlbum } from 'react-photo-album'
 import 'react-photo-album/rows.css'
 import ArtistDirectory from '../components/ArtistDirectory'
+import GalleryLightbox from '../components/GalleryLightbox'
 import {
   gallery,
   photoIncludesArtist,
   photosByYear,
   toAlbumPhotos,
+  type GalleryAlbumPhoto,
 } from '../utils/gallery'
 import { publicUrl } from '../utils/publicUrl'
 import Reveal from '../components/Reveal'
@@ -28,6 +30,9 @@ export default function Gallery() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [directoryOpen, setDirectoryOpen] = useState(false)
   const [activeYear, setActiveYear] = useState<string | null>(null)
+  const [lightboxPhoto, setLightboxPhoto] = useState<GalleryAlbumPhoto | null>(
+    null,
+  )
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map())
   const deepLinkedYear = useRef(false)
 
@@ -119,6 +124,10 @@ export default function Gallery() {
   }
 
   const highlightedYear = activeYear ?? yearParam ?? years[0] ?? null
+
+  function openLightbox({ photo }: { photo: GalleryAlbumPhoto }) {
+    setLightboxPhoto(photo)
+  }
 
   return (
     <main className="page gallery-page">
@@ -219,12 +228,12 @@ export default function Gallery() {
                     ) : (
                       <RowsPhotoAlbum
                         photos={albumPhotos}
-                        targetRowHeight={180}
-                        spacing={8}
-                        rowConstraints={{ singleRowMaxHeight: 260 }}
-                        defaultContainerWidth={720}
+                        targetRowHeight={280}
+                        spacing={10}
+                        rowConstraints={{ singleRowMaxHeight: 400 }}
+                        defaultContainerWidth={1100}
                         sizes={{
-                          size: '720px',
+                          size: '1100px',
                           sizes: [
                             {
                               viewport: '(max-width: 768px)',
@@ -232,6 +241,7 @@ export default function Gallery() {
                             },
                           ],
                         }}
+                        onClick={openLightbox}
                       />
                     )}
                   </section>
@@ -268,12 +278,12 @@ export default function Gallery() {
             ) : (
               <RowsPhotoAlbum
                 photos={artistPhotos}
-                targetRowHeight={200}
-                spacing={8}
-                rowConstraints={{ singleRowMaxHeight: 280 }}
-                defaultContainerWidth={900}
+                targetRowHeight={300}
+                spacing={10}
+                rowConstraints={{ singleRowMaxHeight: 420 }}
+                defaultContainerWidth={1100}
                 sizes={{
-                  size: '900px',
+                  size: '1100px',
                   sizes: [
                     {
                       viewport: '(max-width: 960px)',
@@ -281,6 +291,7 @@ export default function Gallery() {
                     },
                   ],
                 }}
+                onClick={openLightbox}
               />
             )}
           </section>
@@ -293,6 +304,11 @@ export default function Gallery() {
         selectedSlug={selectedArtist?.slug ?? null}
         onSelect={selectArtist}
         onClose={() => setDirectoryOpen(false)}
+      />
+
+      <GalleryLightbox
+        photo={lightboxPhoto}
+        onClose={() => setLightboxPhoto(null)}
       />
     </main>
   )
