@@ -7,6 +7,15 @@ import {
   passwordsMatch,
   sessionCookieHeader,
 } from '../netlify/functions/_lib/auth.ts'
+import { gigStore } from '../netlify/functions/_lib/gigStore.ts'
+import type {
+  GigImageUpload,
+  GigInput,
+} from '../netlify/functions/_lib/gigTypes.ts'
+import {
+  parseGigImageKey,
+  validateGigInput,
+} from '../netlify/functions/_lib/gigTypes.ts'
 import { localStore } from '../netlify/functions/_lib/localStore.ts'
 import type {
   HomeBannerInput,
@@ -133,6 +142,50 @@ async function handleNews(req: IncomingMessage, res: ServerResponse, url: URL) {
   sendJson(res, 200, snapshot)
 }
 
+async function handleGigs(req: IncomingMessage, res: ServerResponse, url: URL) {
+  if (req.method === 'OPTIONS') {
+    sendJson(res, 204, null)
+    return
+  }
+  if (req.method !== 'GET') {
+    sendJson(res, 405, { error: 'Method not allowed' })
+    return
+  }
+
+  if (url.searchParams.get('resource')?.trim() === 'image') {
+    const key = parseGigImageKey(url.searchParams.get('key'))
+    if (!key) {
+      sendJson(res, 400, { error: 'Missing image key' })
+      return
+    }
+    const image = await gigStore.getImage(key)
+    if (!image) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' })
+      res.end('Not found')
+      return
+    }
+    res.writeHead(200, {
+      'Content-Type': image.contentType,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    })
+    res.end(image.buffer)
+    return
+  }
+
+  const state = await gigStore.list()
+  const id = url.searchParams.get('id')?.trim()
+  if (id) {
+    const gig = state.gigs.find((g) => g.id === id)
+    if (!gig) {
+      sendJson(res, 404, { error: 'Gig not found' })
+      return
+    }
+    sendJson(res, 200, { gig, updatedAt: state.updatedAt })
+    return
+  }
+  sendJson(res, 200, state)
+}
+
 async function handleAdmin(req: IncomingMessage, res: ServerResponse, url: URL) {
   if (req.method === 'OPTIONS') {
     sendJson(res, 204, null)
@@ -194,6 +247,108 @@ async function handleAdmin(req: IncomingMessage, res: ServerResponse, url: URL) 
       return
     }
     sendJson(res, 405, { error: 'Method not allowed' })
+    return
+  }
+
+  if (action === 'gigs') {
+    if (req.method === 'GET') {
+      const id = url.searchParams.get('id')
+      if (id) {
+        const gig = await gigStore.getById(id)
+        if (!gig) {
+          sendJson(res, 404, { error: 'Gig not found' })
+          return
+        }
+        sendJson(res, 200, { gig })
+        return
+      }
+      const state = await gigStore.list()
+      sendJson(res, 200, state)
+      return
+    }
+    if (req.method === 'POST') {
+      const raw = await readBody(req)
+      const body = raw ? (JSON.parse(raw) as GigInput) : ({} as GigInput)
+      const error = validateGigInput(body)
+      if (error) {
+        sendJson(res, 400, { error })
+        return
+      }
+      try {
+        const gig = await gigStore.create(body)
+        sendJson(res, 201, { gig })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Create failed'
+        sendJson(res, message.includes('already exists') ? 409 : 500, {
+          error: message,
+        })
+      }
+      return
+    }
+    if (req.method === 'PUT') {
+      const id = url.searchParams.get('id')
+      if (!id) {
+        sendJson(res, 400, { error: 'Missing id' })
+        return
+      }
+      const raw = await readBody(req)
+      const body = raw ? (JSON.parse(raw) as GigInput) : ({} as GigInput)
+      const error = validateGigInput(body)
+      if (error) {
+        sendJson(res, 400, { error })
+        return
+      }
+      try {
+        const gig = await gigStore.update(id, body)
+        sendJson(res, 200, { gig })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Update failed'
+        const status = message.includes('not found')
+          ? 404
+          : message.includes('already exists')
+            ? 409
+            : 500
+        sendJson(res, status, { error: message })
+      }
+      return
+    }
+    if (req.method === 'DELETE') {
+      const id = url.searchParams.get('id')
+      if (!id) {
+        sendJson(res, 400, { error: 'Missing id' })
+        return
+      }
+      try {
+        await gigStore.remove(id)
+        sendJson(res, 200, { ok: true })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Delete failed'
+        sendJson(res, message.includes('not found') ? 404 : 500, {
+          error: message,
+        })
+      }
+      return
+    }
+    sendJson(res, 405, { error: 'Method not allowed' })
+    return
+  }
+
+  if (action === 'gig-image' && req.method === 'POST') {
+    const raw = await readBody(req)
+    const body = raw
+      ? (JSON.parse(raw) as GigImageUpload)
+      : ({} as GigImageUpload)
+    if (!body.dataBase64?.trim()) {
+      sendJson(res, 400, { error: 'Image data is required' })
+      return
+    }
+    try {
+      const uploaded = await gigStore.uploadImage(body)
+      sendJson(res, 201, uploaded)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Upload failed'
+      sendJson(res, 400, { error: message })
+    }
     return
   }
 
@@ -288,6 +443,10 @@ export function newsApiDevPlugin(): Plugin {
         try {
           if (url.pathname === '/.netlify/functions/news') {
             await handleNews(req, res, url)
+            return
+          }
+          if (url.pathname === '/.netlify/functions/gigs') {
+            await handleGigs(req, res, url)
             return
           }
           if (url.pathname === '/.netlify/functions/news-admin') {

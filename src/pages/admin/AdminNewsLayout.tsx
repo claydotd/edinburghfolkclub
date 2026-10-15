@@ -35,9 +35,11 @@ export default function AdminNewsLayout() {
       </header>
       <nav className="admin-nav" aria-label="Site admin">
         <NavLink to="/admin/list" end>
-          All posts
+          News posts
         </NavLink>
-        <NavLink to="/admin/new">New post</NavLink>
+        <NavLink to="/admin/gigs" end>
+          Gigs
+        </NavLink>
         <NavLink to="/admin/banner">Homepage banners</NavLink>
       </nav>
       <Outlet />

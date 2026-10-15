@@ -38,14 +38,17 @@ export function resolveGigDetails(
     overrides.ticketPrices ?? overrides['ticket-prices'];
 
   return {
-    venue: overrides.venue ?? GIG_DEFAULTS.venue,
-    doors: overrides.doors ?? GIG_DEFAULTS.doors,
-    music: overrides.music ?? GIG_DEFAULTS.music,
+    venue: overrides.venue?.trim() || GIG_DEFAULTS.venue,
+    doors: overrides.doors?.trim() || GIG_DEFAULTS.doors,
+    music: overrides.music?.trim() || GIG_DEFAULTS.music,
     ticketPrices: {
       standard:
-        priceOverrides?.standard ?? GIG_DEFAULTS.ticketPrices.standard,
-      unwaged: priceOverrides?.unwaged ?? GIG_DEFAULTS.ticketPrices.unwaged,
-      members: priceOverrides?.members ?? GIG_DEFAULTS.ticketPrices.members,
+        priceOverrides?.standard?.trim() ||
+        GIG_DEFAULTS.ticketPrices.standard,
+      unwaged:
+        priceOverrides?.unwaged?.trim() || GIG_DEFAULTS.ticketPrices.unwaged,
+      members:
+        priceOverrides?.members?.trim() || GIG_DEFAULTS.ticketPrices.members,
     },
   };
 }

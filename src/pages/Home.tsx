@@ -1,6 +1,5 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import gigs from '../../gigs/autumn2026.json';
 import GigDetailModal from '../components/GigDetailModal';
 import {
   formatTicketPrices,
@@ -11,22 +10,15 @@ import { publicUrl } from '../utils/publicUrl';
 import NewsletterSignup from '../components/NewsletterSignup';
 import HomeBanner from '../components/HomeBanner';
 import Reveal from '../components/Reveal';
-type Gig = (typeof gigs.gigs)[number];
-
-const gigsData = gigs.gigs;
+import { fetchGigs } from '../gigs/api';
+import type { Gig } from '../gigs/types';
+import { localDateString } from '../gigs/types';
 
 /** When true, "More details" opens the artist website if set; when false, always opens the modal. */
 const preferArtistWebsite = true;
 
-function localDateString(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-GB', {
+  return new Date(`${dateStr}T12:00:00`).toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -36,12 +28,35 @@ function formatDate(dateStr: string) {
 
 export default function Home() {
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
-  const upcomingGigs = gigsData.filter((gig) => gig.date >= localDateString());
+  const [gigs, setGigs] = useState<Gig[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchGigs()
+      .then((state) => {
+        if (cancelled) return;
+        setGigs(state.gigs);
+        setLoadError(null);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setLoadError(err instanceof Error ? err.message : 'Failed to load gigs');
+        setGigs([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const upcomingGigs = (gigs ?? []).filter(
+    (gig) => gig.date >= localDateString(),
+  );
   const selectedDetails = selectedGig
     ? resolveGigDetails(selectedGig)
     : null;
   const selectedMarkdown = selectedGig
-    ? getGigMarkdown(selectedGig.date)
+    ? selectedGig.bodyMarkdown?.trim() || getGigMarkdown(selectedGig.date)
     : null;
 
   return (
@@ -55,12 +70,19 @@ export default function Home() {
           </div>
       </div>
       </Reveal>
+
+      {gigs === null ? (
+        <p className="flyer-loading">Loading gigs…</p>
+      ) : loadError ? (
+        <p className="news-error" role="alert">
+          {loadError}
+        </p>
+      ) : upcomingGigs.length === 0 ? (
+        <p className="flyer-loading">No upcoming gigs listed right now.</p>
+      ) : (
       <ol className="flyer-list">
         {upcomingGigs.map((gig, index) => {
-          const imagePath =
-            'imagepath' in gig && typeof gig.imagepath === 'string'
-              ? gig.imagepath
-              : undefined;
+          const imagePath = gig.imagepath || undefined;
           const details = resolveGigDetails(gig);
 
           return (
@@ -68,7 +90,7 @@ export default function Home() {
               className={
                 imagePath ? 'flyer-gig flyer-gig--featured' : 'flyer-gig'
               }
-              key={gig.date}
+              key={gig.id}
               style={{ '--i': index } as CSSProperties}
             >
               <div className="flyer-body">
@@ -80,14 +102,22 @@ export default function Home() {
                     <h2 className="flyer-name">{gig.name}</h2>
                   </div>
                   <p className="flyer-description">{gig.description}</p>
-                  <p className="flyer-prices">
-                      {formatTicketPrices(details.ticketPrices)}
-                    </p>
-                    <p><em className="flyer-prices-note">*Tickets Scotland sales will incur a booking fee</em></p>
+                  {gig.ticketsAvailable !== false ? (
+                    <>
+                      <p className="flyer-prices">
+                        {formatTicketPrices(details.ticketPrices)}
+                      </p>
+                      <p>
+                        <em className="flyer-prices-note">
+                          *Tickets Scotland sales will incur a booking fee
+                        </em>
+                      </p>
+                    </>
+                  ) : (
+                    <p className="flyer-prices">Tickets coming soon...</p>
+                  )}
                   <div className="flyer-actions">
-                    {preferArtistWebsite &&
-                    'website' in gig &&
-                    gig.website ? (
+                    {preferArtistWebsite && gig.website ? (
                       <a
                         className="flyer-more"
                         href={gig.website}
@@ -105,7 +135,7 @@ export default function Home() {
                         More details
                       </button>
                     )}
-                    {'tickets' in gig && gig.tickets && (
+                    {gig.ticketsAvailable !== false && gig.tickets ? (
                       <a
                         className="flyer-tickets"
                         href={gig.tickets}
@@ -114,7 +144,7 @@ export default function Home() {
                       >
                         Book at Tickets Scotland
                       </a>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
@@ -131,6 +161,7 @@ export default function Home() {
           );
         })}
       </ol>
+      )}
 
       {selectedGig && selectedDetails && (
         <GigDetailModal
@@ -139,11 +170,12 @@ export default function Home() {
           details={selectedDetails}
           markdown={selectedMarkdown}
           tickets={
-            'tickets' in selectedGig ? selectedGig.tickets : undefined
+            selectedGig.ticketsAvailable !== false
+              ? selectedGig.tickets || undefined
+              : undefined
           }
-          website={
-            'website' in selectedGig ? selectedGig.website : undefined
-          }
+          ticketsAvailable={selectedGig.ticketsAvailable !== false}
+          website={selectedGig.website || undefined}
           onClose={() => setSelectedGig(null)}
         />
       )}

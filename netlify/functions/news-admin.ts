@@ -6,6 +6,9 @@ import {
   passwordsMatch,
   sessionCookieHeader,
 } from './_lib/auth.ts'
+import { gigStore } from './_lib/gigStore.ts'
+import type { GigImageUpload, GigInput } from './_lib/gigTypes.ts'
+import { validateGigInput } from './_lib/gigTypes.ts'
 import { json, noStoreHeaders, readJsonBody } from './_lib/http.ts'
 import { newsStore } from './_lib/store.ts'
 import type { HomeBannerInput, HomeBannersInput, NewsPostInput } from './_lib/types.ts'
@@ -137,6 +140,78 @@ export const handler: Handler = async (event) => {
         return json(200, { banners }, noStoreHeaders())
       }
       return json(405, { error: 'Method not allowed' }, noStoreHeaders())
+    }
+
+    if (action === 'gigs') {
+      if (event.httpMethod === 'GET') {
+        const id = event.queryStringParameters?.id
+        if (id) {
+          const gig = await gigStore.getById(id)
+          if (!gig) return json(404, { error: 'Gig not found' }, noStoreHeaders())
+          return json(200, { gig }, noStoreHeaders())
+        }
+        const state = await gigStore.list()
+        return json(200, state, noStoreHeaders())
+      }
+      if (event.httpMethod === 'POST') {
+        const body = await readJsonBody<GigInput>(event.body)
+        const error = validateGigInput(body)
+        if (error) return json(400, { error }, noStoreHeaders())
+        try {
+          const gig = await gigStore.create(body)
+          return json(201, { gig }, noStoreHeaders())
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Create failed'
+          const status = message.includes('already exists') ? 409 : 500
+          return json(status, { error: message }, noStoreHeaders())
+        }
+      }
+      if (event.httpMethod === 'PUT') {
+        const id = event.queryStringParameters?.id
+        if (!id) return json(400, { error: 'Missing id' }, noStoreHeaders())
+        const body = await readJsonBody<GigInput>(event.body)
+        const error = validateGigInput(body)
+        if (error) return json(400, { error }, noStoreHeaders())
+        try {
+          const gig = await gigStore.update(id, body)
+          return json(200, { gig }, noStoreHeaders())
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Update failed'
+          const status = message.includes('not found')
+            ? 404
+            : message.includes('already exists')
+              ? 409
+              : 500
+          return json(status, { error: message }, noStoreHeaders())
+        }
+      }
+      if (event.httpMethod === 'DELETE') {
+        const id = event.queryStringParameters?.id
+        if (!id) return json(400, { error: 'Missing id' }, noStoreHeaders())
+        try {
+          await gigStore.remove(id)
+          return json(200, { ok: true }, noStoreHeaders())
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Delete failed'
+          const status = message.includes('not found') ? 404 : 500
+          return json(status, { error: message }, noStoreHeaders())
+        }
+      }
+      return json(405, { error: 'Method not allowed' }, noStoreHeaders())
+    }
+
+    if (action === 'gig-image' && event.httpMethod === 'POST') {
+      const body = await readJsonBody<GigImageUpload>(event.body)
+      if (!body.dataBase64?.trim()) {
+        return json(400, { error: 'Image data is required' }, noStoreHeaders())
+      }
+      try {
+        const uploaded = await gigStore.uploadImage(body)
+        return json(201, uploaded, noStoreHeaders())
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Upload failed'
+        return json(400, { error: message }, noStoreHeaders())
+      }
     }
 
     if (event.httpMethod === 'GET') {

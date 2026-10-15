@@ -23,6 +23,7 @@ type GigDetailModalProps = {
   details: GigDetails;
   markdown: string | null;
   tickets?: string;
+  ticketsAvailable?: boolean;
   website?: string;
   onClose: () => void;
 };
@@ -33,6 +34,7 @@ export default function GigDetailModal({
   details,
   markdown,
   tickets,
+  ticketsAvailable = true,
   website,
   onClose,
 }: GigDetailModalProps) {
@@ -163,9 +165,19 @@ export default function GigDetailModal({
             <div>
               <dt>Tickets</dt>
               <dd>
-                {ticketPrices.standard} standard · {ticketPrices.unwaged}{' '}
-                unwaged · {ticketPrices.members} members
-                <p><em className="gig-modal__prices-note">*Tickets Scotland sales will incur a booking fee</em></p>
+                {ticketsAvailable ? (
+                  <>
+                    {ticketPrices.standard} standard · {ticketPrices.unwaged}{' '}
+                    unwaged · {ticketPrices.members} members
+                    <p>
+                      <em className="gig-modal__prices-note">
+                        *Tickets Scotland sales will incur a booking fee
+                      </em>
+                    </p>
+                  </>
+                ) : (
+                  'Tickets coming soon...'
+                )}
               </dd>
             </div>
           </dl>

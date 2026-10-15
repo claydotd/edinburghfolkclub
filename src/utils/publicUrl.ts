@@ -1,6 +1,11 @@
 /** Resolve a public/ path against Vite's `base` (e.g. `/` or `/edinburghfolkclub/`). */
 export function publicUrl(path: string): string {
-  if (!path || /^([a-z]+:)?\/\//i.test(path) || path.startsWith('data:')) {
+  if (
+    !path ||
+    /^([a-z]+:)?\/\//i.test(path) ||
+    path.startsWith('data:') ||
+    path.startsWith('/.netlify/')
+  ) {
     return path
   }
 
