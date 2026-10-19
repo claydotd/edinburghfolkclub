@@ -76,6 +76,10 @@ Public `/news` reads a **Blobs snapshot** via `/.netlify/functions/news` (CDN-ca
 | `/.netlify/functions/news-admin` | Login + CRUD (DB, then rebuild snapshot); `?action=banner` for banner |
 | `.data/news-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
 
+## Gigs
+
+The public listing and `/admin/gigs` read and write the `gigs` table (migration `003_create_gigs.sql`). An empty table is filled with the current season from `netlify/functions/_lib/gigSeed.ts`. `npm run dev` uses the same season to seed `.data/gigs-local.json`. Uploaded gig images stay in the `gig-images` Blobs store.
+
 ## Members
 
 Anyone whose email is on the list can open `/members`. Paid status does not lock documents; it is a committee record.

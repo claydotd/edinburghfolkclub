@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import {
   asIsoDate,
   asIsoTimestamp,
@@ -11,10 +10,11 @@ import {
   type MemberInput,
   type MemberRecord,
 } from './memberTypes.ts'
+import { localDataDir } from './localDataDir.ts'
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
-const dataDir = path.join(rootDir, '.data')
-const dataFile = path.join(dataDir, 'members-local.json')
+function dataFilePath(): string {
+  return path.join(localDataDir(), 'members-local.json')
+}
 
 type DbMemberRow = {
   id: string
@@ -32,8 +32,8 @@ function shouldUseLocalStore(): boolean {
 
 function readLocal(): MemberRecord[] {
   try {
-    if (!fs.existsSync(dataFile)) return []
-    const parsed = JSON.parse(fs.readFileSync(dataFile, 'utf8')) as {
+    if (!fs.existsSync(dataFilePath())) return []
+    const parsed = JSON.parse(fs.readFileSync(dataFilePath(), 'utf8')) as {
       members?: MemberRecord[]
     }
     return Array.isArray(parsed.members) ? parsed.members : []
@@ -43,8 +43,9 @@ function readLocal(): MemberRecord[] {
 }
 
 function writeLocal(members: MemberRecord[]) {
-  fs.mkdirSync(dataDir, { recursive: true })
-  fs.writeFileSync(dataFile, JSON.stringify({ members }, null, 2), 'utf8')
+  const file = dataFilePath()
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, JSON.stringify({ members }, null, 2), 'utf8')
 }
 
 function sortMembers(members: Member[]): Member[] {

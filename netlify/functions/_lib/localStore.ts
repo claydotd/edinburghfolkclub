@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import type {
   HomeBannersInput,
   HomeBannersState,
@@ -15,10 +14,11 @@ import {
   normalizeHomeBanners,
   postToSnapshotPost,
 } from './types.ts'
+import { localDataDir } from './localDataDir.ts'
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
-const dataDir = path.join(rootDir, '.data')
-const dataFile = path.join(dataDir, 'news-local.json')
+function dataFilePath(): string {
+  return path.join(localDataDir(), 'news-local.json')
+}
 
 type LocalFile = {
   posts: NewsPost[]
@@ -58,7 +58,7 @@ function buildSnapshot(posts: NewsPost[]): NewsSnapshot {
 
 function readFile(): LocalFile {
   try {
-    if (!fs.existsSync(dataFile)) {
+    if (!fs.existsSync(dataFilePath())) {
       const posts = [seedPost]
       const initial: LocalFile = {
         posts,
@@ -68,7 +68,7 @@ function readFile(): LocalFile {
       writeFile(initial)
       return initial
     }
-    const raw = fs.readFileSync(dataFile, 'utf8')
+    const raw = fs.readFileSync(dataFilePath(), 'utf8')
     const parsed = JSON.parse(raw) as Partial<LocalFile>
     return {
       posts: Array.isArray(parsed.posts) ? parsed.posts : [],
@@ -84,8 +84,9 @@ function readFile(): LocalFile {
 }
 
 function writeFile(data: LocalFile) {
-  fs.mkdirSync(dataDir, { recursive: true })
-  fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), 'utf8')
+  const file = dataFilePath()
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8')
 }
 
 function normalizeInput(input: NewsPostInput, existing?: NewsPost): NewsPost {

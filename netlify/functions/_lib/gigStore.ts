@@ -1,41 +1,63 @@
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { getStore } from '@netlify/blobs'
 import { buildSeedGigsState } from './gigSeed.ts'
 import type { Gig, GigImageUpload, GigInput, GigsState } from './gigTypes.ts'
 import {
   GIG_IMAGE_MAX_BYTES,
   coerceGigsState,
-  emptyGigsState,
   normalizeGig,
   parseGigImageKey,
   publicGigImagePath,
   sortGigsChronological,
 } from './gigTypes.ts'
+import { asIsoDate, asIsoTimestamp } from './memberTypes.ts'
+import { localDataDir } from './localDataDir.ts'
 
-const GIGS_BLOB_STORE = 'gigs'
-const GIGS_LIST_KEY = 'list'
 const GIG_IMAGES_BLOB_STORE = 'gig-images'
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
-const dataDir = path.join(rootDir, '.data')
-const gigsFile = path.join(dataDir, 'gigs-local.json')
-const imagesDir = path.join(dataDir, 'gig-images')
+function gigsFile(): string {
+  return path.join(localDataDir(), 'gigs-local.json')
+}
+
+function imagesDir(): string {
+  return path.join(localDataDir(), 'gig-images')
+}
 
 function shouldUseLocalStore(): boolean {
   return process.env.NEWS_USE_LOCAL === '1' || !process.env.NETLIFY
 }
 
+type DbGigRow = {
+  id: string
+  gig_date: unknown
+  name: string
+  description: string
+  tickets: string
+  tickets_available: boolean
+  website: string
+  imagepath: string
+  body_markdown: string
+  venue: string
+  doors: string
+  music: string
+  price_standard: string
+  price_unwaged: string
+  price_members: string
+  created_at: unknown
+  updated_at: unknown
+}
+
 function readLocalGigs(): GigsState {
+  const file = gigsFile()
   try {
-    if (!fs.existsSync(gigsFile)) {
+    if (!fs.existsSync(file)) {
       const seeded = buildSeedGigsState()
       writeLocalGigs(seeded)
       return seeded
     }
-    const raw = fs.readFileSync(gigsFile, 'utf8')
+    const raw = fs.readFileSync(file, 'utf8')
     const parsed = coerceGigsState(JSON.parse(raw))
     if (parsed.gigs.length === 0) {
       const seeded = buildSeedGigsState()
@@ -44,42 +66,188 @@ function readLocalGigs(): GigsState {
     }
     return parsed
   } catch {
-    return buildSeedGigsState()
+    const seeded = buildSeedGigsState()
+    try {
+      writeLocalGigs(seeded)
+    } catch {
+      // The caller still receives the season list if the file cannot be written.
+    }
+    return seeded
   }
 }
 
 function writeLocalGigs(state: GigsState) {
-  fs.mkdirSync(dataDir, { recursive: true })
-  fs.writeFileSync(gigsFile, JSON.stringify(state, null, 2), 'utf8')
-}
-
-async function gigsBlobStore() {
-  return getStore({ name: GIGS_BLOB_STORE, consistency: 'strong' })
+  const file = gigsFile()
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf8')
 }
 
 async function imagesBlobStore() {
   return getStore({ name: GIG_IMAGES_BLOB_STORE, consistency: 'strong' })
 }
 
-async function readBlobGigs(): Promise<GigsState> {
-  try {
-    const store = await gigsBlobStore()
-    const value = await store.get(GIGS_LIST_KEY, { type: 'json' })
-    const parsed = coerceGigsState(value)
-    if (parsed.gigs.length === 0) {
-      const seeded = buildSeedGigsState()
-      await store.setJSON(GIGS_LIST_KEY, seeded)
-      return seeded
-    }
-    return parsed
-  } catch {
-    return emptyGigsState()
+async function getDb() {
+  const { getDatabase } = await import('@netlify/database')
+  return getDatabase()
+}
+
+function priceOrEmpty(value: string | undefined): string {
+  return (value ?? '').trim()
+}
+
+function rowToGig(row: DbGigRow): Gig {
+  const standard = row.price_standard.trim()
+  const unwaged = row.price_unwaged.trim()
+  const members = row.price_members.trim()
+  return {
+    id: row.id,
+    date: asIsoDate(row.gig_date) ?? '1970-01-01',
+    name: row.name,
+    description: row.description,
+    tickets: row.tickets,
+    ticketsAvailable: Boolean(row.tickets_available),
+    website: row.website,
+    imagepath: row.imagepath,
+    bodyMarkdown: row.body_markdown,
+    venue: row.venue,
+    doors: row.doors,
+    music: row.music,
+    ticketPrices: {
+      standard: standard || undefined,
+      unwaged: unwaged || undefined,
+      members: members || undefined,
+    },
+    createdAt: asIsoTimestamp(row.created_at),
+    updatedAt: asIsoTimestamp(row.updated_at),
   }
 }
 
-async function writeBlobGigs(state: GigsState): Promise<void> {
-  const store = await gigsBlobStore()
-  await store.setJSON(GIGS_LIST_KEY, state)
+function rowsToState(rows: DbGigRow[]): GigsState {
+  const gigs = sortGigsChronological(rows.map(rowToGig))
+  const updatedAt = gigs.reduce(
+    (latest, gig) => (gig.updatedAt > latest ? gig.updatedAt : latest),
+    gigs[0]?.updatedAt ?? new Date().toISOString(),
+  )
+  return { gigs, updatedAt }
+}
+
+async function seedDatabaseGigs(): Promise<void> {
+  const db = await getDb()
+  const seed = buildSeedGigsState()
+  for (const gig of seed.gigs) {
+    await db.sql`
+      INSERT INTO gigs (
+        id, gig_date, name, description, tickets, tickets_available, website, imagepath,
+        body_markdown, venue, doors, music, price_standard, price_unwaged, price_members,
+        created_at, updated_at
+      )
+      VALUES (
+        ${gig.id},
+        ${gig.date},
+        ${gig.name},
+        ${gig.description},
+        ${gig.tickets},
+        ${gig.ticketsAvailable},
+        ${gig.website},
+        ${gig.imagepath},
+        ${gig.bodyMarkdown},
+        ${gig.venue},
+        ${gig.doors},
+        ${gig.music},
+        ${priceOrEmpty(gig.ticketPrices.standard)},
+        ${priceOrEmpty(gig.ticketPrices.unwaged)},
+        ${priceOrEmpty(gig.ticketPrices.members)},
+        ${gig.createdAt},
+        ${gig.updatedAt}
+      )
+      ON CONFLICT (gig_date) DO NOTHING
+    `
+  }
+}
+
+async function selectGigs(): Promise<DbGigRow[]> {
+  const db = await getDb()
+  return db.sql<DbGigRow>`
+    SELECT
+      id, gig_date, name, description, tickets, tickets_available, website, imagepath,
+      body_markdown, venue, doors, music, price_standard, price_unwaged, price_members,
+      created_at, updated_at
+    FROM gigs
+    ORDER BY gig_date ASC
+  `
+}
+
+async function readDatabaseGigs(): Promise<GigsState> {
+  let rows = await selectGigs()
+  if (rows.length === 0) {
+    await seedDatabaseGigs()
+    rows = await selectGigs()
+  }
+  return rowsToState(rows)
+}
+
+async function insertGig(gig: Gig): Promise<void> {
+  const db = await getDb()
+  await db.sql`
+    INSERT INTO gigs (
+      id, gig_date, name, description, tickets, tickets_available, website, imagepath,
+      body_markdown, venue, doors, music, price_standard, price_unwaged, price_members,
+      created_at, updated_at
+    )
+    VALUES (
+      ${gig.id},
+      ${gig.date},
+      ${gig.name},
+      ${gig.description},
+      ${gig.tickets},
+      ${gig.ticketsAvailable},
+      ${gig.website},
+      ${gig.imagepath},
+      ${gig.bodyMarkdown},
+      ${gig.venue},
+      ${gig.doors},
+      ${gig.music},
+      ${priceOrEmpty(gig.ticketPrices.standard)},
+      ${priceOrEmpty(gig.ticketPrices.unwaged)},
+      ${priceOrEmpty(gig.ticketPrices.members)},
+      ${gig.createdAt},
+      ${gig.updatedAt}
+    )
+  `
+}
+
+async function updateGigRow(gig: Gig): Promise<void> {
+  const db = await getDb()
+  const rows = await db.sql<{ id: string }>`
+    UPDATE gigs
+    SET
+      gig_date = ${gig.date},
+      name = ${gig.name},
+      description = ${gig.description},
+      tickets = ${gig.tickets},
+      tickets_available = ${gig.ticketsAvailable},
+      website = ${gig.website},
+      imagepath = ${gig.imagepath},
+      body_markdown = ${gig.bodyMarkdown},
+      venue = ${gig.venue},
+      doors = ${gig.doors},
+      music = ${gig.music},
+      price_standard = ${priceOrEmpty(gig.ticketPrices.standard)},
+      price_unwaged = ${priceOrEmpty(gig.ticketPrices.unwaged)},
+      price_members = ${priceOrEmpty(gig.ticketPrices.members)},
+      updated_at = ${gig.updatedAt}
+    WHERE id = ${gig.id}
+    RETURNING id
+  `
+  if (!rows[0]) throw new Error('Gig not found')
+}
+
+async function deleteGigRow(id: string): Promise<void> {
+  const db = await getDb()
+  const rows = await db.sql<{ id: string }>`
+    DELETE FROM gigs WHERE id = ${id} RETURNING id
+  `
+  if (!rows[0]) throw new Error('Gig not found')
 }
 
 function extensionForContentType(contentType: string): string {
@@ -111,23 +279,24 @@ function decodeImageUpload(upload: GigImageUpload): {
 }
 
 function writeLocalImage(key: string, buffer: Buffer, contentType: string) {
-  fs.mkdirSync(imagesDir, { recursive: true })
-  fs.writeFileSync(path.join(imagesDir, key), buffer)
+  const dir = imagesDir()
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(path.join(dir, key), buffer)
   fs.writeFileSync(
-    path.join(imagesDir, `${key}.meta.json`),
+    path.join(dir, `${key}.meta.json`),
     JSON.stringify({ contentType }, null, 2),
     'utf8',
   )
 }
 
 function readLocalImage(key: string): { buffer: Buffer; contentType: string } | null {
-  const filePath = path.join(imagesDir, key)
+  const filePath = path.join(imagesDir(), key)
   if (!fs.existsSync(filePath)) return null
   const buffer = fs.readFileSync(filePath)
   let contentType = 'image/jpeg'
   try {
     const meta = JSON.parse(
-      fs.readFileSync(path.join(imagesDir, `${key}.meta.json`), 'utf8'),
+      fs.readFileSync(path.join(imagesDir(), `${key}.meta.json`), 'utf8'),
     ) as { contentType?: string }
     if (meta.contentType) contentType = meta.contentType
   } catch {
@@ -137,8 +306,8 @@ function readLocalImage(key: string): { buffer: Buffer; contentType: string } | 
 }
 
 function deleteLocalImage(key: string) {
-  const filePath = path.join(imagesDir, key)
-  const metaPath = path.join(imagesDir, `${key}.meta.json`)
+  const filePath = path.join(imagesDir(), key)
+  const metaPath = path.join(imagesDir(), `${key}.meta.json`)
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
   if (fs.existsSync(metaPath)) fs.unlinkSync(metaPath)
 }
@@ -156,7 +325,7 @@ function imageKeyFromPath(imagepath: string): string | null {
 export const gigStore = {
   async list(): Promise<GigsState> {
     if (shouldUseLocalStore()) return readLocalGigs()
-    return readBlobGigs()
+    return readDatabaseGigs()
   },
 
   async getById(id: string): Promise<Gig | null> {
@@ -175,7 +344,7 @@ export const gigStore = {
       updatedAt: new Date().toISOString(),
     }
     if (shouldUseLocalStore()) writeLocalGigs(next)
-    else await writeBlobGigs(next)
+    else await insertGig(gig)
     return gig
   },
 
@@ -195,7 +364,7 @@ export const gigStore = {
       updatedAt: new Date().toISOString(),
     }
     if (shouldUseLocalStore()) writeLocalGigs(next)
-    else await writeBlobGigs(next)
+    else await updateGigRow(gig)
 
     const prevKey = imageKeyFromPath(previous.imagepath)
     const nextKey = imageKeyFromPath(gig.imagepath)
@@ -214,7 +383,7 @@ export const gigStore = {
       updatedAt: new Date().toISOString(),
     }
     if (shouldUseLocalStore()) writeLocalGigs(next)
-    else await writeBlobGigs(next)
+    else await deleteGigRow(id)
     const key = imageKeyFromPath(gig.imagepath)
     if (key) await this.deleteImage(key)
   },
