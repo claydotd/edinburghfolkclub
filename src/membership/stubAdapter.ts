@@ -6,7 +6,7 @@ export type MembershipSession = {
   isPaid: boolean;
 };
 
-/** Phase 1 stub — swap for Netlify Function + DB in Phase 2. */
+/** GitHub Pages demo only. Netlify builds use the members function instead. */
 export function loadSession(): MembershipSession | null {
   const email = localStorage.getItem(EMAIL_KEY);
   if (!email) return null;

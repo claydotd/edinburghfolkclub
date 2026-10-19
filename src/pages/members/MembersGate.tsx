@@ -7,6 +7,8 @@ export default function MembersGate() {
   const { memberEmail, ready, signIn } = useMembership();
   const location = useLocation();
   const [email, setEmail] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const from =
     (location.state as { from?: string } | null)?.from ?? '/members/account';
 
@@ -22,10 +24,20 @@ export default function MembersGate() {
     return <Navigate to={from} replace />;
   }
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!email.trim()) return;
-    signIn(email);
+    setSubmitting(true);
+    setError(null);
+    try {
+      await signIn(email);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Could not open the members’ area',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -39,6 +51,11 @@ export default function MembersGate() {
         </p>
       </header>
       <form className="site-form site-form--compact" onSubmit={handleSubmit}>
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <label className="form-field">
           <span>Email</span>
           <input
@@ -50,14 +67,10 @@ export default function MembersGate() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
-        <button type="submit" className="form-submit">
-          Continue
+        <button type="submit" className="form-submit" disabled={submitting}>
+          {submitting ? 'Checking…' : 'Continue'}
         </button>
       </form>
-      <p className="form-note">
-        Prototype: any email works. Real membership checks arrive with the
-        Netlify backend.
-      </p>
     </main>
     </Reveal>
   );

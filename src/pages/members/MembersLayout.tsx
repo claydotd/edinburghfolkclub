@@ -6,7 +6,7 @@ export default function MembersLayout() {
   const { memberEmail, signOut } = useMembership();
 
   return (
-    <Reveal variant="zoom" delay={100}>
+    <Reveal variant="zoom" delay={100} className="members-layout">
     <div className="members-shell">
       <div className="members-shell-bar">
         <p className="members-shell-email">
@@ -17,9 +17,9 @@ export default function MembersLayout() {
         </button>
       </div>
       <nav className="members-nav" aria-label="Members">
-        <NavLink to="/members/account">Account</NavLink>
         <NavLink to="/members/documents">Documents</NavLink>
-        <NavLink to="/members/tickets">Tickets</NavLink>
+        {/* <NavLink to="/members/tickets">Tickets</NavLink> */}
+        <NavLink to="/members/account">Account</NavLink>
       </nav>
       <Outlet />
     </div>

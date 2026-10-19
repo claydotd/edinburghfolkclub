@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { marked } from 'marked'
 import TurndownService from 'turndown'
+import { markdownColorsToHtml } from '../utils/markdownColor'
 
 type MarkdownEditorProps = {
   value: string
@@ -24,10 +25,20 @@ turndown.addRule('strike', {
   replacement: (content) => `~~${content}~~`,
 })
 
+turndown.addRule('mdColor', {
+  filter: (node) =>
+    node.nodeName === 'SPAN' &&
+    (node.classList.contains('md-red') || node.classList.contains('md-green')),
+  replacement: (content, node) => {
+    const color = (node as HTMLElement).classList.contains('md-red') ? 'red' : 'green'
+    return `{${color}}${content}{/${color}}`
+  },
+})
+
 marked.setOptions({ gfm: true, breaks: false })
 
 function markdownToHtml(markdown: string): string {
-  const html = marked.parse(markdown || '', { async: false })
+  const html = marked.parse(markdownColorsToHtml(markdown || ''), { async: false })
   return typeof html === 'string' ? html : ''
 }
 
@@ -98,6 +109,21 @@ export default function MarkdownEditor({
     setMode(next)
   }
 
+  function applyColor(color: 'red' | 'green') {
+    const el = visualRef.current
+    if (!el) return
+    el.focus()
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return
+    const range = selection.getRangeAt(0)
+    if (!el.contains(range.commonAncestorContainer)) return
+    const span = document.createElement('span')
+    span.className = `md-${color}`
+    span.appendChild(range.extractContents())
+    range.insertNode(span)
+    emitFromVisual()
+  }
+
   function formatVisual(command: string, commandValue?: string) {
     const el = visualRef.current
     if (!el) return
@@ -149,6 +175,22 @@ export default function MarkdownEditor({
             </button>
             <button
               type="button"
+              className="md-color-red"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => applyColor('red')}
+            >
+              Red
+            </button>
+            <button
+              type="button"
+              className="md-color-green"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => applyColor('green')}
+            >
+              Green
+            </button>
+            <button
+              type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => formatVisual('formatBlock', 'h2')}
             >
@@ -186,7 +228,7 @@ export default function MarkdownEditor({
           <div
             ref={visualRef}
             id={id}
-            className="markdown-editor-visual prose"
+            className="markdown-editor-visual markdown-body prose"
             contentEditable
             role="textbox"
             aria-multiline="true"

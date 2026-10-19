@@ -1,12 +1,12 @@
 # Edinburgh Folk Club
 
-Static React + Vite prototype for layout and content. Hosted on GitHub Pages in Phase 1; forms and membership are UI stubs. On Pages, news and admin run in a **client-side demo** (example articles + password `admin`). On Netlify, news uses Functions + Database + Blobs (with a local file store for `npm run dev`).
+React + Vite site. **Netlify** is the production host: news, gigs, and members use Functions + Database + Blobs, and the contact forms post to Netlify Forms. GitHub Pages remains a static demo (`VITE_NEWS_DEMO=1`) with example news and a local-only members sign-in. `npm run dev` uses a file store in `.data/` for news, gigs, and members.
 
 ## Scripts
 
 ```bash
 npm install
-npm run dev      # local development (includes news API stub)
+npm run dev      # local development (file-backed news, gigs, and members)
 npm run build    # production build → dist/
 npm run preview  # preview the production build
 ```
@@ -39,12 +39,11 @@ The Vite `base` is controlled by `VITE_BASE` (default `/`).
 - Local / Netlify / custom domain: leave unset (`/`)
 - Match Pages locally: `VITE_BASE=/edinburghfolkclub/ VITE_NEWS_DEMO=1 npm run build`
 
-## Phase 1 stubs (intentional)
+## Still deferred
 
-- **Contact** and **newsletter** forms use Netlify-shaped markup (`data-netlify`, honeypot, hidden static forms in `index.html`) but submit locally with a success message only.
-- **Members area** accepts any email (stored in `localStorage`). PayPal is a placeholder button; click it to mark membership paid in the prototype.
 - **Members’ tickets** is layout-only; booking is deferred.
-- **News / admin (GitHub Pages)** use `VITE_NEWS_DEMO=1`: seeded example articles, admin password `admin`, edits in `localStorage` only (see below).
+- **PayPal** checkout is not wired. Paid status is recorded by an admin.
+- **GitHub Pages** (`VITE_NEWS_DEMO=1`) keeps seeded news, admin password `admin`, and an any-email members sign-in in the browser. It does not share the membership list.
 
 ## News demo (GitHub Pages)
 
@@ -54,8 +53,9 @@ When `VITE_NEWS_DEMO=1` (set automatically by the Pages deploy workflow):
 |-------|-----------|
 | Public `/news` | Seeded example articles from `src/news/demoData.ts` |
 | Homepage banner | Seeded banner (editable in admin) |
-| `/admin` | Password **`admin`**; session in `sessionStorage` |
-| Persistence | Browser `localStorage` only — not shared between visitors |
+| `/admin` | Password **`admin`**; session in `sessionStorage`. The Members screen is hidden |
+| Members sign-in | Any email, stored in `localStorage` |
+| Persistence | Browser only — not shared between visitors |
 
 Try a Pages-like build locally:
 
@@ -76,30 +76,38 @@ Public `/news` reads a **Blobs snapshot** via `/.netlify/functions/news` (CDN-ca
 | `/.netlify/functions/news-admin` | Login + CRUD (DB, then rebuild snapshot); `?action=banner` for banner |
 | `.data/news-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
 
-### Netlify setup
+## Members
 
-1. Enable **Netlify Database** on the site (migrations apply on deploy).
-2. Set environment variables (Site settings → Environment variables, or `.env` for local):
+Anyone whose email is on the list can open `/members`. Paid status does not lock documents; it is a committee record.
+
+| Piece | Role |
+|-------|------|
+| `members` table | Name, email, paid checkbox, paid date (migration `002_create_members.sql`) |
+| Expiry | Paid date plus one calendar year. Current only when Paid is ticked and today is before that date |
+| `/.netlify/functions/members` | Email sign-in, logout, and session cookie `efc_member` |
+| `/.netlify/functions/members-admin` | List, create, update, delete (same admin cookie as news) |
+| `/admin/members` | Admin screen for the list |
+| `.data/members-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
+
+## Forms
+
+`contact`, `newsletter`, and `play-efc` are detected from the hidden forms in `index.html`. Production Netlify builds set `VITE_NETLIFY_FORMS=1` and POST submissions to Netlify Forms. `npm run dev` and the Pages demo show a local success message instead.
+
+## Deploy to Netlify
+
+1. In Netlify, add a new site from this Git repository. The build settings in [`netlify.toml`](netlify.toml) are picked up automatically (`npm run build`, publish `dist`, functions in `netlify/functions`). Leave `VITE_BASE` and `VITE_NEWS_DEMO` unset.
+2. Enable **Netlify Database**. Migrations in `netlify/database/migrations/` run on deploy.
+3. Set environment variables (Site settings → Environment variables):
 
 | Variable | Purpose |
 |----------|---------|
 | `NEWS_ADMIN_PASSWORD` | Shared password for `/admin` |
-| `NEWS_ADMIN_SECRET` | HMAC secret for the admin session cookie |
+| `NEWS_ADMIN_SECRET` | HMAC secret for the admin and member session cookies |
 
-3. Deploy to Netlify (or run `netlify dev` linked to the site).
-4. Open `/admin`, sign in, create posts. Publish to refresh the public snapshot.
+4. Deploy, then open `/admin` and add members. Publish a news post to refresh the public snapshot.
+5. After the first deploy, confirm `contact`, `newsletter`, and `play-efc` appear under **Forms**.
 
-Local Vite defaults (dev only): password `local-dev-password`, secret `local-dev-secret-change-me`.
-
-## Phase 2 hooks
-
-| Concern | Ready seam |
-|---------|------------|
-| Hosting | `netlify.toml`, `public/_redirects` |
-| Forms | Netlify form names `contact` / `newsletter` |
-| Membership | `src/membership/` adapter + context |
-| PayPal | `VITE_PAYPAL_BUTTON_ID` env (unused until live SDK) |
-| News | Pages: `VITE_NEWS_DEMO` client stub; Netlify: Functions + DB + Blobs |
+Local Vite defaults (dev only): password `local-dev-password`, secret `local-dev-secret-change-me`. `netlify dev` uses the linked site’s database and environment variables.
 
 ## Content
 
@@ -110,4 +118,4 @@ Local Vite defaults (dev only): password `local-dev-password`, secret `local-dev
 | `content/terms.md` | Terms & Conditions |
 | `content/gallery.json` | Media gallery |
 | `content/other-folk.json` | Other Folk links |
-| `content/members/` | Member documents |
+| `content/members/` | Member documents (markdown). The people on the list live in the database, not in this folder |

@@ -1,16 +1,9 @@
-import { useEffect, useState, type ComponentPropsWithoutRef } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import ReactMarkdown from 'react-markdown'
+import MarkdownContent from '../components/MarkdownContent'
 import { fetchNewsPost, formatNewsDate } from '../news/api'
 import type { NewsSnapshotPost } from '../news/types'
-import { publicUrl } from '../utils/publicUrl'
 import Reveal from '../components/Reveal'
-
-const markdownComponents = {
-  img: ({ src, alt, ...props }: ComponentPropsWithoutRef<'img'>) => (
-    <img src={src ? publicUrl(src) : src} alt={alt ?? ''} {...props} />
-  ),
-}
 
 type LoadState =
   | { status: 'loading'; slug: string }
@@ -73,9 +66,7 @@ export default function NewsPost() {
           </Reveal>
           <Reveal variant="up" delay={200}>
           <div className="prose">
-            <ReactMarkdown components={markdownComponents}>
-              {post.bodyMarkdown}
-            </ReactMarkdown>
+            <MarkdownContent>{post.bodyMarkdown}</MarkdownContent>
           </div>
           </Reveal>
         </>

@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
+import MarkdownContent from '../../components/MarkdownContent';
 import { getContentMarkdown } from '../../utils/contentMarkdown';
 import documents from '../../../content/members/documents.json';
 
@@ -18,7 +18,7 @@ export default function MembersDocumentDetail() {
       </header>
       <div className="prose">
         {markdown ? (
-          <ReactMarkdown>{markdown}</ReactMarkdown>
+          <MarkdownContent>{markdown}</MarkdownContent>
         ) : (
           <p>This document could not be found.</p>
         )}

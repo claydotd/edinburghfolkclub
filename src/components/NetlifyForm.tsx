@@ -11,9 +11,43 @@ type NetlifyFormProps = {
   onSuccess?: () => void;
 };
 
+function formsAreLive(): boolean {
+  const flag = import.meta.env.VITE_NETLIFY_FORMS;
+  return flag === '1' || flag === 'true';
+}
+
+async function postToNetlify(
+  form: HTMLFormElement,
+  encType: NetlifyFormProps['encType'],
+): Promise<void> {
+  if (encType === 'multipart/form-data') {
+    const response = await fetch('/', {
+      method: 'POST',
+      body: new FormData(form),
+    });
+    if (!response.ok) {
+      throw new Error('Form submission failed');
+    }
+    return;
+  }
+
+  const params = new URLSearchParams();
+  for (const [key, value] of new FormData(form).entries()) {
+    if (typeof value === 'string') params.append(key, value);
+  }
+  const response = await fetch('/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  });
+  if (!response.ok) {
+    throw new Error('Form submission failed');
+  }
+}
+
 /**
- * Phase 1: mock submit with Netlify-shaped markup.
- * Phase 2: remove preventDefault mock and POST to Netlify Forms (or use AJAX).
+ * Posts to Netlify Forms when VITE_NETLIFY_FORMS is set (production deploys).
+ * Local Vite and the GitHub Pages demo keep a short success state.
  */
 export default function NetlifyForm({
   name,
@@ -24,16 +58,26 @@ export default function NetlifyForm({
 }: NetlifyFormProps) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setSubmitting(true);
-    // Simulate a short network delay for the prototype.
-    window.setTimeout(() => {
-      setSubmitting(false);
+    setError(null);
+    try {
+      if (formsAreLive()) {
+        await postToNetlify(form, encType);
+      } else {
+        await new Promise((resolve) => window.setTimeout(resolve, 400));
+      }
       setSubmitted(true);
       onSuccess?.();
-    }, 400);
+    } catch {
+      setError('Something went wrong sending the form. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -53,6 +97,11 @@ export default function NetlifyForm({
           <input name="bot-field" tabIndex={-1} autoComplete="off" />
         </label>
       </p>
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
       {children({ submitted, submitting })}
     </form>
   );

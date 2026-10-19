@@ -3,6 +3,9 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[build.environment]
+  VITE_NETLIFY_FORMS = "1"
+
 # SPA fallback — Netlify Functions are matched before this rule
 [[redirects]]
   from = "/*"

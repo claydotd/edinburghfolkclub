@@ -14,6 +14,8 @@
   --ink: #1f1435;
   --moss: #4a6b3a;
   --berry: #8f3d4e;
+  --md-red: #ff2b2b;
+  --md-green: #00c04b;
 
   --gold-wash: color-mix(in srgb, var(--gold) 16%, var(--white));
   --heather-wash: color-mix(in srgb, var(--heather) 28%, var(--white));
@@ -731,6 +733,39 @@ a {
 
 .prose a {
   color: var(--accent);
+}
+
+.markdown-body .markdown-table-wrap {
+  overflow-x: auto;
+  margin: 0 0 1rem;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  padding: 0.4rem 0.55rem;
+  vertical-align: top;
+  text-align: left;
+}
+
+.markdown-body th {
+  font-weight: var(--weight-bold);
+  color: var(--text-h);
+  background: color-mix(in srgb, var(--gold) 28%, var(--white));
+}
+
+.md-red {
+  color: var(--md-red);
+}
+
+.md-green {
+  color: var(--md-green);
 }
 
 .back-link {
@@ -2545,6 +2580,18 @@ a {
   padding-inline: 0;
 }
 
+.members-layout.about-reveal--visible {
+  transform: none;
+  overflow: visible;
+}
+
+.members-document .markdown-table-wrap {
+  width: 95vw;
+  margin-left: calc(50% - 47.5vw);
+  margin-right: calc(50% - 47.5vw);
+  box-sizing: border-box;
+}
+
 /* --- Membership status --- */
 .membership-status {
   margin-top: 0.5rem;
@@ -2562,6 +2609,31 @@ a {
 .membership-status-unpaid {
   font-family: var(--sans);
   margin-bottom: 1rem;
+}
+
+.membership-details {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+}
+
+.membership-details div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.membership-details dt {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text) 68%, transparent);
+}
+
+.membership-details dd {
+  margin: 0;
+  font-family: var(--sans);
 }
 
 /* --- PayPal stub --- */
@@ -3871,6 +3943,12 @@ a.location-link:hover,
   border-color: color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
+.admin-post-status.is-expired {
+  color: color-mix(in srgb, var(--berry) 90%, var(--text));
+  background: var(--berry-wash);
+  border-color: color-mix(in srgb, var(--berry) 35%, transparent);
+}
+
 .admin-post-date {
   font-family: var(--sans);
   font-size: 0.85rem;
@@ -3941,6 +4019,63 @@ a.location-link:hover,
   gap: 0.75rem;
   padding-top: 0.35rem;
   border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.admin-member-form {
+  max-width: 42rem;
+  padding: 1rem 1.05rem 1.15rem;
+  background: color-mix(in srgb, var(--white) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.admin-member-form-title {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 1.25rem;
+}
+
+.admin-member-paid-row {
+  display: grid;
+  gap: 1rem;
+  align-items: end;
+}
+
+@media (min-width: 720px) {
+  .admin-member-paid-row {
+    grid-template-columns: minmax(8rem, auto) minmax(12rem, 16rem);
+  }
+}
+
+.admin-member-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-member-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+}
+
+.admin-member-table th,
+.admin-member-table td {
+  text-align: left;
+  vertical-align: middle;
+  padding: 0.75rem 0.7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.admin-member-table th {
+  font-size: 0.75rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text) 68%, transparent);
+}
+
+.admin-member-table td:last-child,
+.admin-member-table th:last-child {
+  text-align: right;
 }
 
 .admin-banner-saved {
@@ -4290,6 +4425,18 @@ a.location-link:hover,
 .markdown-editor-toolbar button:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.markdown-editor-toolbar button.md-color-red,
+.markdown-editor-toolbar button.md-color-red:hover {
+  color: var(--md-red);
+  border-color: color-mix(in srgb, var(--md-red) 45%, transparent);
+}
+
+.markdown-editor-toolbar button.md-color-green,
+.markdown-editor-toolbar button.md-color-green:hover {
+  color: var(--md-green);
+  border-color: color-mix(in srgb, var(--md-green) 45%, transparent);
 }
 
 .markdown-editor-visual {

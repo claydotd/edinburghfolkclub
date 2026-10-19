@@ -1,9 +1,13 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import {
+  clearMemberSessionCookieHeader,
   clearSessionCookieHeader,
+  createMemberSessionToken,
   createSessionToken,
   isAuthenticated,
+  memberIdFromCookies,
+  memberSessionCookieHeader,
   passwordsMatch,
   sessionCookieHeader,
 } from '../netlify/functions/_lib/auth.ts'
@@ -17,6 +21,12 @@ import {
   validateGigInput,
 } from '../netlify/functions/_lib/gigTypes.ts'
 import { localStore } from '../netlify/functions/_lib/localStore.ts'
+import { memberStore } from '../netlify/functions/_lib/memberStore.ts'
+import type { MemberInput } from '../netlify/functions/_lib/memberTypes.ts'
+import {
+  normalizeEmail,
+  validateMemberInput,
+} from '../netlify/functions/_lib/memberTypes.ts'
 import type {
   HomeBannerInput,
   HomeBannersInput,
@@ -433,6 +443,148 @@ async function handleAdmin(req: IncomingMessage, res: ServerResponse, url: URL) 
   sendJson(res, 405, { error: 'Method not allowed' })
 }
 
+const UNKNOWN_MEMBER_EMAIL = "We don't have that email on the membership list."
+
+function storeErrorStatus(message: string, fallback: number): number {
+  if (message.includes('not found')) return 404
+  if (message.includes('already exists')) return 409
+  return fallback
+}
+
+async function handleMembers(req: IncomingMessage, res: ServerResponse, url: URL) {
+  if (req.method === 'OPTIONS') {
+    sendJson(res, 204, null)
+    return
+  }
+
+  const action = url.searchParams.get('action')
+
+  if (req.method === 'POST' && action === 'login') {
+    const raw = await readBody(req)
+    const body = raw ? (JSON.parse(raw) as { email?: string }) : {}
+    const email = normalizeEmail(body.email ?? '')
+    if (!email) {
+      sendJson(res, 400, { error: 'Email is required' })
+      return
+    }
+    const member = await memberStore.getByEmail(email)
+    if (!member) {
+      sendJson(res, 404, { error: UNKNOWN_MEMBER_EMAIL })
+      return
+    }
+    sendJson(
+      res,
+      200,
+      { member },
+      { 'Set-Cookie': memberSessionCookieHeader(createMemberSessionToken(member.id)) },
+    )
+    return
+  }
+
+  if (req.method === 'POST' && action === 'logout') {
+    sendJson(res, 200, { ok: true }, { 'Set-Cookie': clearMemberSessionCookieHeader() })
+    return
+  }
+
+  if (req.method === 'GET' && action === 'session') {
+    const memberId = memberIdFromCookies(req.headers.cookie)
+    if (!memberId) {
+      sendJson(res, 200, { member: null })
+      return
+    }
+    const member = await memberStore.getById(memberId)
+    if (!member) {
+      sendJson(
+        res,
+        200,
+        { member: null },
+        { 'Set-Cookie': clearMemberSessionCookieHeader() },
+      )
+      return
+    }
+    sendJson(res, 200, { member })
+    return
+  }
+
+  sendJson(res, 405, { error: 'Method not allowed' })
+}
+
+async function handleMembersAdmin(
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+) {
+  if (req.method === 'OPTIONS') {
+    sendJson(res, 204, null)
+    return
+  }
+
+  if (!isAuthenticated(req.headers.cookie)) {
+    sendJson(res, 401, { error: 'Unauthorized' })
+    return
+  }
+
+  const id = url.searchParams.get('id')?.trim()
+
+  if (req.method === 'GET') {
+    if (id) {
+      const member = await memberStore.getById(id)
+      if (!member) {
+        sendJson(res, 404, { error: 'Member not found' })
+        return
+      }
+      sendJson(res, 200, { member })
+      return
+    }
+    sendJson(res, 200, { members: await memberStore.list() })
+    return
+  }
+
+  if (req.method === 'POST' || req.method === 'PUT') {
+    const raw = await readBody(req)
+    const body = raw ? (JSON.parse(raw) as MemberInput) : ({} as MemberInput)
+    const error = validateMemberInput(body)
+    if (error) {
+      sendJson(res, 400, { error })
+      return
+    }
+    try {
+      if (req.method === 'POST') {
+        const member = await memberStore.create(body)
+        sendJson(res, 201, { member })
+        return
+      }
+      if (!id) {
+        sendJson(res, 400, { error: 'Missing id' })
+        return
+      }
+      const member = await memberStore.update(id, body)
+      sendJson(res, 200, { member })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Save failed'
+      sendJson(res, storeErrorStatus(message, 500), { error: message })
+    }
+    return
+  }
+
+  if (req.method === 'DELETE') {
+    if (!id) {
+      sendJson(res, 400, { error: 'Missing id' })
+      return
+    }
+    try {
+      await memberStore.remove(id)
+      sendJson(res, 200, { ok: true })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Delete failed'
+      sendJson(res, storeErrorStatus(message, 500), { error: message })
+    }
+    return
+  }
+
+  sendJson(res, 405, { error: 'Method not allowed' })
+}
+
 /** Dev-only middleware mirroring /.netlify/functions/news(+-admin) against the local file store. */
 export function newsApiDevPlugin(): Plugin {
   return {
@@ -451,6 +603,14 @@ export function newsApiDevPlugin(): Plugin {
           }
           if (url.pathname === '/.netlify/functions/news-admin') {
             await handleAdmin(req, res, url)
+            return
+          }
+          if (url.pathname === '/.netlify/functions/members') {
+            await handleMembers(req, res, url)
+            return
+          }
+          if (url.pathname === '/.netlify/functions/members-admin') {
+            await handleMembersAdmin(req, res, url)
             return
           }
         } catch (err) {

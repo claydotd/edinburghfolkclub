@@ -25,6 +25,7 @@ import AdminNewsEdit from './pages/admin/AdminNewsEdit.tsx'
 import AdminHomeBanner from './pages/admin/AdminHomeBanner.tsx'
 import AdminGigsList from './pages/admin/AdminGigsList.tsx'
 import AdminGigEdit from './pages/admin/AdminGigEdit.tsx'
+import AdminMembers from './pages/admin/AdminMembers.tsx'
 import RequireAdmin from './news/RequireAdmin.tsx'
 
 function PublicShell() {
@@ -49,6 +50,7 @@ function App() {
               <Route path="list" element={<AdminNewsList />} />
               <Route path="banner" element={<AdminHomeBanner />} />
               <Route path="gigs" element={<AdminGigsList />} />
+              <Route path="members" element={<AdminMembers />} />
               <Route path="gigs/new" element={<AdminGigEdit />} />
               <Route path="gigs/:id" element={<AdminGigEdit />} />
               <Route path="new" element={<AdminNewsEdit />} />

@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { adminLogout } from '../../news/api'
+import { adminLogout, isNewsDemo } from '../../news/api'
 
 export default function AdminNewsLayout() {
   const navigate = useNavigate()
@@ -41,6 +41,7 @@ export default function AdminNewsLayout() {
           Gigs
         </NavLink>
         <NavLink to="/admin/banner">Homepage banners</NavLink>
+        {isNewsDemo() ? null : <NavLink to="/admin/members">Members</NavLink>}
       </nav>
       <Outlet />
     </div>
