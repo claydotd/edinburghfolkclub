@@ -65,7 +65,7 @@ VITE_NEWS_DEMO=1 npm run build && npm run preview
 
 ## News (Netlify DB + Blobs)
 
-Public `/news` reads a **Blobs snapshot** via `/.netlify/functions/news` (CDN-cached). Postgres is only used when an editor saves from `/admin`.
+Public `/news` reads a **Blobs snapshot** via `/.netlify/functions/news` (CDN-cached). When Netlify Database is connected, Postgres is only used from `/admin`, and each save rebuilds the snapshot. When it is not connected, `/admin` reads and writes Blobs directly, including that public snapshot, so the admin screen still loads.
 
 | Piece | Role |
 |-------|------|
@@ -73,7 +73,8 @@ Public `/news` reads a **Blobs snapshot** via `/.netlify/functions/news` (CDN-ca
 | Blobs store `news` / key `published` | Published feed snapshot for public reads |
 | Blobs store `news` / key `home-banner` | Homepage banner text + CTA |
 | `/.netlify/functions/news` | Public read (blob only; `?resource=banner` for banner) |
-| `/.netlify/functions/news-admin` | Login + CRUD (DB, then rebuild snapshot); `?action=banner` for banner |
+| Blobs store `news` / key `posts` | Full post list used by admin when the database is not connected |
+| `/.netlify/functions/news-admin` | Login + CRUD. Database when connected, otherwise Blobs. Either way a save rebuilds `published`. `?action=banner` for banner |
 | `.data/news-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
 
 ## Gigs
@@ -98,7 +99,7 @@ Anyone whose email is on the list can open `/members`. Paid status does not lock
 | Blobs store `members` / key `list` | Server-only snapshot for sign-in and session. Not returned as a public list |
 | Expiry | Paid date plus one calendar year. Current only when Paid is ticked and today is before that date |
 | `/.netlify/functions/members` | Email sign-in and session from the snapshot (no database). Logout clears cookie `efc_member` |
-| `/.netlify/functions/members-admin` | List, create, update, delete (DB, then rebuild snapshot) |
+| `/.netlify/functions/members-admin` | List, create, update, delete. Database when connected, otherwise the snapshot. A database save rebuilds the snapshot |
 | `/admin/members` | Admin screen for the list. Opening it publishes the current table into the snapshot |
 | `.data/members-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
 

@@ -12,6 +12,7 @@ import {
   type MemberInput,
   type MemberRecord,
 } from './memberTypes.ts'
+import { databaseIsConfigured, getDatabaseClient } from './database.ts'
 import { localDataDir, shouldUseLocalStore } from './localDataDir.ts'
 
 const MEMBERS_BLOB_STORE = 'members'
@@ -68,8 +69,7 @@ function rowToRecord(row: DbMemberRow): MemberRecord {
 }
 
 async function getDb() {
-  const { getDatabase } = await import('@netlify/database')
-  return getDatabase()
+  return getDatabaseClient()
 }
 
 function coerceMemberRecord(value: unknown): MemberRecord | null {
@@ -102,7 +102,7 @@ function coerceMemberRecords(value: unknown): MemberRecord[] {
 }
 
 async function membersBlobStore() {
-  return getStore({ name: MEMBERS_BLOB_STORE, consistency: 'strong' })
+  return getStore({ name: MEMBERS_BLOB_STORE, consistency: 'eventual' })
 }
 
 /** Public snapshot. Never opens the database. */
@@ -174,6 +174,9 @@ export const memberStore = {
     if (shouldUseLocalStore()) {
       return sortMembers(readLocal().map(toMember))
     }
+    if (!(await databaseIsConfigured())) {
+      return sortMembers((await readBlobMembers()).map(toMember))
+    }
     const records = await selectMembers()
     await writeBlobMembers(records)
     return sortMembers(records.map(toMember))
@@ -184,6 +187,7 @@ export const memberStore = {
       const record = readLocal().find((member) => member.id === id)
       return record ? toMember(record) : null
     }
+    if (!(await databaseIsConfigured())) return this.getPublishedById(id)
     const db = await getDb()
     const rows = await db.sql<DbMemberRow>`
       SELECT id, name, email, paid, paid_at, created_at, updated_at
@@ -201,6 +205,7 @@ export const memberStore = {
       const record = readLocal().find((member) => member.email === normalised)
       return record ? toMember(record) : null
     }
+    if (!(await databaseIsConfigured())) return this.getPublishedByEmail(normalised)
     const db = await getDb()
     const rows = await db.sql<DbMemberRow>`
       SELECT id, name, email, paid, paid_at, created_at, updated_at
@@ -225,6 +230,21 @@ export const memberStore = {
       }
       members.push(record)
       writeLocal(members)
+      return toMember(record)
+    }
+
+    if (!(await databaseIsConfigured())) {
+      const members = await readBlobMembers()
+      assertUniqueEmail(members, fields.email)
+      const now = new Date().toISOString()
+      const record: MemberRecord = {
+        id: randomUUID(),
+        ...fields,
+        createdAt: now,
+        updatedAt: now,
+      }
+      members.push(record)
+      await writeBlobMembers(members)
       return toMember(record)
     }
 
@@ -258,6 +278,21 @@ export const memberStore = {
       return toMember(record)
     }
 
+    if (!(await databaseIsConfigured())) {
+      const members = await readBlobMembers()
+      const index = members.findIndex((member) => member.id === id)
+      if (index < 0) throw new Error('Member not found')
+      assertUniqueEmail(members, fields.email, id)
+      const record: MemberRecord = {
+        ...members[index],
+        ...fields,
+        updatedAt: new Date().toISOString(),
+      }
+      members[index] = record
+      await writeBlobMembers(members)
+      return toMember(record)
+    }
+
     const existing = await this.getById(id)
     if (!existing) throw new Error('Member not found')
     const emailOwner = await this.getByEmail(fields.email)
@@ -288,6 +323,13 @@ export const memberStore = {
       const next = members.filter((member) => member.id !== id)
       if (next.length === members.length) throw new Error('Member not found')
       writeLocal(next)
+      return
+    }
+    if (!(await databaseIsConfigured())) {
+      const members = await readBlobMembers()
+      const next = members.filter((member) => member.id !== id)
+      if (next.length === members.length) throw new Error('Member not found')
+      await writeBlobMembers(next)
       return
     }
     const db = await getDb()

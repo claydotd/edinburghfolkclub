@@ -13,14 +13,13 @@ import {
   publicGigImagePath,
   sortGigsChronological,
 } from './gigTypes.ts'
+import { databaseIsConfigured, getDatabaseClient } from './database.ts'
 import { asIsoDate, asIsoTimestamp } from './memberTypes.ts'
 import { localDataDir, shouldUseLocalStore } from './localDataDir.ts'
 
 const GIGS_BLOB_STORE = 'gigs'
 const GIGS_LIST_KEY = 'list'
 const GIG_IMAGES_BLOB_STORE = 'gig-images'
-
-let databaseConfigured: boolean | undefined
 
 function gigsFile(): string {
   return path.join(localDataDir(), 'gigs-local.json')
@@ -84,36 +83,15 @@ function writeLocalGigs(state: GigsState) {
 }
 
 async function imagesBlobStore() {
-  return getStore({ name: GIG_IMAGES_BLOB_STORE, consistency: 'strong' })
+  return getStore({ name: GIG_IMAGES_BLOB_STORE, consistency: 'eventual' })
 }
 
 async function getDb() {
-  const { getDatabase } = await import('@netlify/database')
-  return getDatabase()
-}
-
-/** Admin-only. Public reads never call this; they use the Blobs snapshot. */
-async function databaseIsConfigured(): Promise<boolean> {
-  if (databaseConfigured !== undefined) return databaseConfigured
-  try {
-    await getDb()
-    databaseConfigured = true
-  } catch (err) {
-    const message = err instanceof Error ? err.message : ''
-    if (
-      message.includes('not been configured') ||
-      message.includes('connectionString')
-    ) {
-      databaseConfigured = false
-    } else {
-      throw err
-    }
-  }
-  return databaseConfigured
+  return getDatabaseClient()
 }
 
 async function gigsBlobStore() {
-  return getStore({ name: GIGS_BLOB_STORE, consistency: 'strong' })
+  return getStore({ name: GIGS_BLOB_STORE, consistency: 'eventual' })
 }
 
 async function readBlobGigs(seedIfEmpty: boolean): Promise<GigsState> {

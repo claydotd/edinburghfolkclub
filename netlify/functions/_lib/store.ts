@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto'
 import { getStore } from '@netlify/blobs'
+import { databaseIsConfigured, getDatabaseClient } from './database.ts'
 import type {
   HomeBannersInput,
   HomeBannersState,
@@ -19,6 +21,7 @@ import { shouldUseLocalStore } from './localDataDir.ts'
 
 const BLOB_STORE = 'news'
 const BLOB_KEY = 'published'
+const BLOB_POSTS_KEY = 'posts'
 const BLOB_BANNER_KEY = 'home-banner'
 
 function emptySnapshot(): NewsSnapshot {
@@ -26,12 +29,48 @@ function emptySnapshot(): NewsSnapshot {
 }
 
 async function getDb() {
-  const { getDatabase } = await import('@netlify/database')
-  return getDatabase()
+  return getDatabaseClient()
+}
+
+function snapshotFromPosts(posts: NewsPost[]): NewsSnapshot {
+  const published = posts
+    .filter((post) => post.published)
+    .sort((a, b) => {
+      const aTime = a.publishedAt ? Date.parse(a.publishedAt) : 0
+      const bTime = b.publishedAt ? Date.parse(b.publishedAt) : 0
+      return bTime - aTime
+    })
+    .map(postToSnapshotPost)
+  return { updatedAt: new Date().toISOString(), posts: published }
+}
+
+function normalizeBlobPost(input: NewsPostInput, existing?: NewsPost): NewsPost {
+  const now = new Date().toISOString()
+  const published = Boolean(input.published)
+  let publishedAt = existing?.publishedAt ?? null
+  if (published && !publishedAt) publishedAt = now
+  if (!published) publishedAt = null
+  return {
+    id: existing?.id ?? randomUUID(),
+    slug: input.slug.trim(),
+    title: input.title.trim(),
+    excerpt: (input.excerpt ?? '').trim(),
+    bodyMarkdown: input.bodyMarkdown ?? '',
+    published,
+    publishedAt,
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  }
+}
+
+function sortPosts(posts: NewsPost[]): NewsPost[] {
+  return [...posts].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
 }
 
 async function blobStore() {
-  return getStore({ name: BLOB_STORE, consistency: 'strong' })
+  // Eventual consistency: this functions runtime has no uncached edge URL,
+  // and a strong read throws, which the public handlers treat as an empty feed.
+  return getStore({ name: BLOB_STORE, consistency: 'eventual' })
 }
 
 async function rebuildSnapshotFromDb(): Promise<NewsSnapshot> {
@@ -50,6 +89,44 @@ async function rebuildSnapshotFromDb(): Promise<NewsSnapshot> {
   const store = await blobStore()
   await store.setJSON(BLOB_KEY, snapshot)
   return snapshot
+}
+
+async function readBlobPosts(): Promise<NewsPost[] | null> {
+  try {
+    const store = await blobStore()
+    const value = await store.get(BLOB_POSTS_KEY, { type: 'json' })
+    if (
+      value &&
+      typeof value === 'object' &&
+      Array.isArray((value as { posts?: unknown }).posts)
+    ) {
+      return (value as { posts: NewsPost[] }).posts
+    }
+  } catch {
+    // Fall through
+  }
+  return null
+}
+
+async function writeBlobPosts(posts: NewsPost[]): Promise<void> {
+  const store = await blobStore()
+  await store.setJSON(BLOB_POSTS_KEY, { posts })
+  await store.setJSON(BLOB_KEY, snapshotFromPosts(posts))
+}
+
+/** Admin listing when the database is not connected. */
+async function listBlobPosts(): Promise<NewsPost[]> {
+  const stored = await readBlobPosts()
+  if (stored) return sortPosts(stored)
+  const snapshot = await readBlobSnapshot()
+  return sortPosts(
+    snapshot.posts.map((post) => ({
+      ...post,
+      published: true,
+      createdAt: post.publishedAt ?? snapshot.updatedAt,
+      updatedAt: snapshot.updatedAt,
+    })),
+  )
 }
 
 async function readBlobSnapshot(): Promise<NewsSnapshot> {
@@ -73,6 +150,7 @@ export const newsStore = {
 
   async listAll(): Promise<NewsPost[]> {
     if (shouldUseLocalStore()) return localStore.listAll()
+    if (!(await databaseIsConfigured())) return listBlobPosts()
     const db = await getDb()
     const rows = await db.sql<DbNewsRow>`
       SELECT id, slug, title, excerpt, body_markdown, published, published_at, created_at, updated_at
@@ -84,6 +162,10 @@ export const newsStore = {
 
   async getById(id: string): Promise<NewsPost | null> {
     if (shouldUseLocalStore()) return localStore.getById(id)
+    if (!(await databaseIsConfigured())) {
+      const posts = await listBlobPosts()
+      return posts.find((post) => post.id === id) ?? null
+    }
     const db = await getDb()
     const rows = await db.sql<DbNewsRow>`
       SELECT id, slug, title, excerpt, body_markdown, published, published_at, created_at, updated_at
@@ -96,6 +178,16 @@ export const newsStore = {
 
   async create(input: NewsPostInput): Promise<NewsPost> {
     if (shouldUseLocalStore()) return localStore.create(input)
+    if (!(await databaseIsConfigured())) {
+      const posts = await listBlobPosts()
+      const post = normalizeBlobPost(input)
+      if (posts.some((item) => item.slug === post.slug)) {
+        throw new Error('A post with this slug already exists')
+      }
+      posts.unshift(post)
+      await writeBlobPosts(posts)
+      return post
+    }
     const db = await getDb()
     const published = Boolean(input.published)
     const publishedAt = published ? new Date().toISOString() : null
@@ -117,6 +209,19 @@ export const newsStore = {
 
   async update(id: string, input: NewsPostInput): Promise<NewsPost> {
     if (shouldUseLocalStore()) return localStore.update(id, input)
+    if (!(await databaseIsConfigured())) {
+      const posts = await listBlobPosts()
+      const index = posts.findIndex((post) => post.id === id)
+      if (index < 0) throw new Error('Post not found')
+      const slugTaken = posts.some(
+        (post) => post.slug === input.slug.trim() && post.id !== id,
+      )
+      if (slugTaken) throw new Error('A post with this slug already exists')
+      const post = normalizeBlobPost(input, posts[index])
+      posts[index] = post
+      await writeBlobPosts(posts)
+      return post
+    }
     const existing = await this.getById(id)
     if (!existing) throw new Error('Post not found')
 
@@ -146,6 +251,13 @@ export const newsStore = {
 
   async remove(id: string): Promise<void> {
     if (shouldUseLocalStore()) return localStore.remove(id)
+    if (!(await databaseIsConfigured())) {
+      const posts = await listBlobPosts()
+      const next = posts.filter((post) => post.id !== id)
+      if (next.length === posts.length) throw new Error('Post not found')
+      await writeBlobPosts(next)
+      return
+    }
     const db = await getDb()
     const rows = await db.sql<{ id: string }>`
       DELETE FROM news_posts WHERE id = ${id} RETURNING id
