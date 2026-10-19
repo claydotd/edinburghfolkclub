@@ -13,7 +13,7 @@ import {
   sortGigsChronological,
 } from './gigTypes.ts'
 import { asIsoDate, asIsoTimestamp } from './memberTypes.ts'
-import { localDataDir } from './localDataDir.ts'
+import { localDataDir, shouldUseLocalStore } from './localDataDir.ts'
 
 const GIG_IMAGES_BLOB_STORE = 'gig-images'
 
@@ -23,10 +23,6 @@ function gigsFile(): string {
 
 function imagesDir(): string {
   return path.join(localDataDir(), 'gig-images')
-}
-
-function shouldUseLocalStore(): boolean {
-  return process.env.NEWS_USE_LOCAL === '1' || !process.env.NETLIFY
 }
 
 type DbGigRow = {

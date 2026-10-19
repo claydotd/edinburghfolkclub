@@ -10,7 +10,7 @@ import {
   type MemberInput,
   type MemberRecord,
 } from './memberTypes.ts'
-import { localDataDir } from './localDataDir.ts'
+import { localDataDir, shouldUseLocalStore } from './localDataDir.ts'
 
 function dataFilePath(): string {
   return path.join(localDataDir(), 'members-local.json')
@@ -24,10 +24,6 @@ type DbMemberRow = {
   paid_at: unknown
   created_at: unknown
   updated_at: unknown
-}
-
-function shouldUseLocalStore(): boolean {
-  return process.env.NEWS_USE_LOCAL === '1' || !process.env.NETLIFY
 }
 
 function readLocal(): MemberRecord[] {

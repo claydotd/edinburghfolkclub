@@ -15,6 +15,7 @@ import {
   type DbNewsRow,
 } from './types.ts'
 import { localStore } from './localStore.ts'
+import { shouldUseLocalStore } from './localDataDir.ts'
 
 const BLOB_STORE = 'news'
 const BLOB_KEY = 'published'
@@ -22,10 +23,6 @@ const BLOB_BANNER_KEY = 'home-banner'
 
 function emptySnapshot(): NewsSnapshot {
   return { updatedAt: new Date().toISOString(), posts: [] }
-}
-
-function shouldUseLocalStore(): boolean {
-  return process.env.NEWS_USE_LOCAL === '1' || !process.env.NETLIFY
 }
 
 async function getDb() {
