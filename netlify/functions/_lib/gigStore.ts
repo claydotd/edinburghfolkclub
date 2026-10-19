@@ -7,6 +7,7 @@ import type { Gig, GigImageUpload, GigInput, GigsState } from './gigTypes.ts'
 import {
   GIG_IMAGE_MAX_BYTES,
   coerceGigsState,
+  emptyGigsState,
   normalizeGig,
   parseGigImageKey,
   publicGigImagePath,
@@ -15,7 +16,11 @@ import {
 import { asIsoDate, asIsoTimestamp } from './memberTypes.ts'
 import { localDataDir, shouldUseLocalStore } from './localDataDir.ts'
 
+const GIGS_BLOB_STORE = 'gigs'
+const GIGS_LIST_KEY = 'list'
 const GIG_IMAGES_BLOB_STORE = 'gig-images'
+
+let databaseConfigured: boolean | undefined
 
 function gigsFile(): string {
   return path.join(localDataDir(), 'gigs-local.json')
@@ -85,6 +90,58 @@ async function imagesBlobStore() {
 async function getDb() {
   const { getDatabase } = await import('@netlify/database')
   return getDatabase()
+}
+
+/** Admin-only. Public reads never call this; they use the Blobs snapshot. */
+async function databaseIsConfigured(): Promise<boolean> {
+  if (databaseConfigured !== undefined) return databaseConfigured
+  try {
+    await getDb()
+    databaseConfigured = true
+  } catch (err) {
+    const message = err instanceof Error ? err.message : ''
+    if (
+      message.includes('not been configured') ||
+      message.includes('connectionString')
+    ) {
+      databaseConfigured = false
+    } else {
+      throw err
+    }
+  }
+  return databaseConfigured
+}
+
+async function gigsBlobStore() {
+  return getStore({ name: GIGS_BLOB_STORE, consistency: 'strong' })
+}
+
+async function readBlobGigs(seedIfEmpty: boolean): Promise<GigsState> {
+  try {
+    const store = await gigsBlobStore()
+    const value = await store.get(GIGS_LIST_KEY, { type: 'json' })
+    const parsed = coerceGigsState(value)
+    if (parsed.gigs.length === 0 && seedIfEmpty) {
+      const seeded = buildSeedGigsState()
+      await store.setJSON(GIGS_LIST_KEY, seeded)
+      return seeded
+    }
+    return parsed
+  } catch {
+    return emptyGigsState()
+  }
+}
+
+async function writeBlobGigs(state: GigsState): Promise<void> {
+  const store = await gigsBlobStore()
+  await store.setJSON(GIGS_LIST_KEY, state)
+}
+
+/** Admin source of truth. Opens the database when it is connected. */
+async function readAdminGigs(): Promise<GigsState> {
+  if (shouldUseLocalStore()) return readLocalGigs()
+  if (await databaseIsConfigured()) return readDatabaseGigs()
+  return readBlobGigs(true)
 }
 
 function priceOrEmpty(value: string | undefined): string {
@@ -318,19 +375,40 @@ function imageKeyFromPath(imagepath: string): string | null {
   }
 }
 
+async function persistAdminGigs(state: GigsState, writeRow: () => Promise<void>): Promise<void> {
+  if (shouldUseLocalStore()) {
+    writeLocalGigs(state)
+    return
+  }
+  if (await databaseIsConfigured()) await writeRow()
+  await writeBlobGigs(state)
+}
+
 export const gigStore = {
+  /** Public listing. Blobs only — never opens the database. */
+  async listPublished(): Promise<GigsState> {
+    if (shouldUseLocalStore()) return readLocalGigs()
+    return readBlobGigs(false)
+  },
+
+  /** Admin listing. Reads the database when connected and republishes the blob. */
   async list(): Promise<GigsState> {
     if (shouldUseLocalStore()) return readLocalGigs()
-    return readDatabaseGigs()
+    if (await databaseIsConfigured()) {
+      const state = await readDatabaseGigs()
+      await writeBlobGigs(state)
+      return state
+    }
+    return readBlobGigs(true)
   },
 
   async getById(id: string): Promise<Gig | null> {
-    const state = await this.list()
+    const state = await readAdminGigs()
     return state.gigs.find((g) => g.id === id) ?? null
   },
 
   async create(input: GigInput): Promise<Gig> {
-    const state = await this.list()
+    const state = await readAdminGigs()
     if (state.gigs.some((g) => g.date === input.date.trim())) {
       throw new Error('A gig already exists on this date')
     }
@@ -339,13 +417,12 @@ export const gigStore = {
       gigs: sortGigsChronological([...state.gigs, gig]),
       updatedAt: new Date().toISOString(),
     }
-    if (shouldUseLocalStore()) writeLocalGigs(next)
-    else await insertGig(gig)
+    await persistAdminGigs(next, () => insertGig(gig))
     return gig
   },
 
   async update(id: string, input: GigInput): Promise<Gig> {
-    const state = await this.list()
+    const state = await readAdminGigs()
     const index = state.gigs.findIndex((g) => g.id === id)
     if (index < 0) throw new Error('Gig not found')
     if (state.gigs.some((g) => g.id !== id && g.date === input.date.trim())) {
@@ -359,8 +436,7 @@ export const gigStore = {
       gigs: sortGigsChronological(nextGigs),
       updatedAt: new Date().toISOString(),
     }
-    if (shouldUseLocalStore()) writeLocalGigs(next)
-    else await updateGigRow(gig)
+    await persistAdminGigs(next, () => updateGigRow(gig))
 
     const prevKey = imageKeyFromPath(previous.imagepath)
     const nextKey = imageKeyFromPath(gig.imagepath)
@@ -371,15 +447,14 @@ export const gigStore = {
   },
 
   async remove(id: string): Promise<void> {
-    const state = await this.list()
+    const state = await readAdminGigs()
     const gig = state.gigs.find((g) => g.id === id)
     if (!gig) throw new Error('Gig not found')
     const next: GigsState = {
       gigs: state.gigs.filter((g) => g.id !== id),
       updatedAt: new Date().toISOString(),
     }
-    if (shouldUseLocalStore()) writeLocalGigs(next)
-    else await deleteGigRow(id)
+    await persistAdminGigs(next, () => deleteGigRow(id))
     const key = imageKeyFromPath(gig.imagepath)
     if (key) await this.deleteImage(key)
   },

@@ -78,19 +78,28 @@ Public `/news` reads a **Blobs snapshot** via `/.netlify/functions/news` (CDN-ca
 
 ## Gigs
 
-The public listing and `/admin/gigs` read and write the `gigs` table (migration `003_create_gigs.sql`). An empty table is filled with the current season from `netlify/functions/_lib/gigSeed.ts`. `npm run dev` uses the same season to seed `.data/gigs-local.json`. Uploaded gig images stay in the `gig-images` Blobs store.
-
-## Members
-
-Anyone whose email is on the list can open `/members`. Paid status does not lock documents; it is a committee record.
+The homepage reads a **Blobs snapshot** via `/.netlify/functions/gigs` (CDN-cached). Postgres is only used from `/admin/gigs`. Opening that screen, or saving a gig, republishes the snapshot. Until the database is connected, admin reads and writes use the `gigs` Blobs store directly. An empty admin store is filled with the current season from `netlify/functions/_lib/gigSeed.ts`; a public read of an empty snapshot stays empty. `npm run dev` seeds `.data/gigs-local.json` with that same season. Uploaded gig images stay in the `gig-images` Blobs store.
 
 | Piece | Role |
 |-------|------|
-| `members` table | Name, email, paid checkbox, paid date (migration `002_create_members.sql`) |
+| `gigs` table | Source of truth (migration `003_create_gigs.sql`) |
+| Blobs store `gigs` / key `list` | Public listing snapshot |
+| `/.netlify/functions/gigs` | Public read (blob only) |
+| `/.netlify/functions/news-admin?action=gigs` | Admin CRUD (DB, then rebuild snapshot) |
+| `.data/gigs-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
+
+## Members
+
+Anyone whose email is on the list can open `/members`. Paid status does not lock documents; it is a committee record. Sign-in and the session check read a **Blobs snapshot**; Postgres is only used from `/admin/members`.
+
+| Piece | Role |
+|-------|------|
+| `members` table | Source of truth. Name, email, paid checkbox, paid date (migration `002_create_members.sql`) |
+| Blobs store `members` / key `list` | Server-only snapshot for sign-in and session. Not returned as a public list |
 | Expiry | Paid date plus one calendar year. Current only when Paid is ticked and today is before that date |
-| `/.netlify/functions/members` | Email sign-in, logout, and session cookie `efc_member` |
-| `/.netlify/functions/members-admin` | List, create, update, delete (same admin cookie as news) |
-| `/admin/members` | Admin screen for the list |
+| `/.netlify/functions/members` | Email sign-in and session from the snapshot (no database). Logout clears cookie `efc_member` |
+| `/.netlify/functions/members-admin` | List, create, update, delete (DB, then rebuild snapshot) |
+| `/admin/members` | Admin screen for the list. Opening it publishes the current table into the snapshot |
 | `.data/members-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
 
 ## Forms
@@ -108,7 +117,7 @@ Anyone whose email is on the list can open `/members`. Paid status does not lock
 | `NEWS_ADMIN_PASSWORD` | Shared password for `/admin` |
 | `NEWS_ADMIN_SECRET` | HMAC secret for the admin and member session cookies |
 
-4. Deploy, then open `/admin` and add members. Publish a news post to refresh the public snapshot.
+4. Deploy, then open `/admin/members` and `/admin/gigs` once so the public snapshots match the database. Publish a news post to refresh the news snapshot.
 5. After the first deploy, confirm `contact`, `newsletter`, and `play-efc` appear under **Forms**.
 
 Local Vite defaults (dev only): password `local-dev-password`, secret `local-dev-secret-change-me`. `netlify dev` uses the linked site’s database and environment variables.

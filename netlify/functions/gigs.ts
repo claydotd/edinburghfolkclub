@@ -31,7 +31,7 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    const state = await gigStore.list()
+    const state = await gigStore.listPublished()
     const id = event.queryStringParameters?.id?.trim()
     if (id) {
       const gig = state.gigs.find((g) => g.id === id)

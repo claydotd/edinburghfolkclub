@@ -26,7 +26,7 @@ export const handler: Handler = async (event) => {
       if (!email) {
         return json(400, { error: 'Email is required' }, noStoreHeaders())
       }
-      const member = await memberStore.getByEmail(email)
+      const member = await memberStore.getPublishedByEmail(email)
       if (!member) {
         return json(404, { error: UNKNOWN_EMAIL }, noStoreHeaders())
       }
@@ -57,7 +57,7 @@ export const handler: Handler = async (event) => {
       if (!memberId) {
         return json(200, { member: null }, noStoreHeaders())
       }
-      const member = await memberStore.getById(memberId)
+      const member = await memberStore.getPublishedById(memberId)
       if (!member) {
         return json(
           200,

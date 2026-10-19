@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { getStore } from '@netlify/blobs'
 import {
   asIsoDate,
   asIsoTimestamp,
+  normalizeEmail,
   normalizeMemberInput,
   toMember,
   type Member,
@@ -11,6 +13,9 @@ import {
   type MemberRecord,
 } from './memberTypes.ts'
 import { localDataDir, shouldUseLocalStore } from './localDataDir.ts'
+
+const MEMBERS_BLOB_STORE = 'members'
+const MEMBERS_LIST_KEY = 'list'
 
 function dataFilePath(): string {
   return path.join(localDataDir(), 'members-local.json')
@@ -67,6 +72,75 @@ async function getDb() {
   return getDatabase()
 }
 
+function coerceMemberRecord(value: unknown): MemberRecord | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Record<string, unknown>
+  if (typeof raw.id !== 'string' || !raw.id.trim()) return null
+  if (typeof raw.name !== 'string') return null
+  if (typeof raw.email !== 'string' || !raw.email.trim()) return null
+  return {
+    id: raw.id,
+    name: raw.name,
+    email: normalizeEmail(raw.email),
+    paid: Boolean(raw.paid),
+    paidAt: typeof raw.paidAt === 'string' && raw.paidAt ? raw.paidAt : null,
+    createdAt:
+      typeof raw.createdAt === 'string' ? raw.createdAt : new Date(0).toISOString(),
+    updatedAt:
+      typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date(0).toISOString(),
+  }
+}
+
+function coerceMemberRecords(value: unknown): MemberRecord[] {
+  if (!value || typeof value !== 'object') return []
+  const members = (value as { members?: unknown }).members
+  if (!Array.isArray(members)) return []
+  return members.flatMap((item) => {
+    const record = coerceMemberRecord(item)
+    return record ? [record] : []
+  })
+}
+
+async function membersBlobStore() {
+  return getStore({ name: MEMBERS_BLOB_STORE, consistency: 'strong' })
+}
+
+/** Public snapshot. Never opens the database. */
+async function readBlobMembers(): Promise<MemberRecord[]> {
+  try {
+    const store = await membersBlobStore()
+    const value = await store.get(MEMBERS_LIST_KEY, { type: 'json' })
+    return coerceMemberRecords(value)
+  } catch {
+    return []
+  }
+}
+
+async function writeBlobMembers(members: MemberRecord[]): Promise<void> {
+  const store = await membersBlobStore()
+  await store.setJSON(MEMBERS_LIST_KEY, { members })
+}
+
+async function selectMembers(): Promise<MemberRecord[]> {
+  const db = await getDb()
+  const rows = await db.sql<DbMemberRow>`
+    SELECT id, name, email, paid, paid_at, created_at, updated_at
+    FROM members
+    ORDER BY name ASC
+  `
+  return rows.map(rowToRecord)
+}
+
+async function republishMembers(): Promise<void> {
+  if (shouldUseLocalStore()) return
+  await writeBlobMembers(await selectMembers())
+}
+
+function publishedFromLocal(match: (record: MemberRecord) => boolean): Member | null {
+  const record = readLocal().find(match)
+  return record ? toMember(record) : null
+}
+
 function assertUniqueEmail(members: MemberRecord[], email: string, exceptId?: string) {
   const taken = members.some(
     (member) => member.email === email && member.id !== exceptId,
@@ -75,17 +149,34 @@ function assertUniqueEmail(members: MemberRecord[], email: string, exceptId?: st
 }
 
 export const memberStore = {
+  /** Sign-in lookup. Blobs only — never opens the database. */
+  async getPublishedByEmail(email: string): Promise<Member | null> {
+    const normalised = normalizeEmail(email)
+    if (!normalised) return null
+    if (shouldUseLocalStore()) {
+      return publishedFromLocal((member) => member.email === normalised)
+    }
+    const record = (await readBlobMembers()).find((member) => member.email === normalised)
+    return record ? toMember(record) : null
+  },
+
+  /** Session lookup. Blobs only — never opens the database. */
+  async getPublishedById(id: string): Promise<Member | null> {
+    if (shouldUseLocalStore()) {
+      return publishedFromLocal((member) => member.id === id)
+    }
+    const record = (await readBlobMembers()).find((member) => member.id === id)
+    return record ? toMember(record) : null
+  },
+
+  /** Admin listing. Reads the database and republishes the blob. */
   async list(): Promise<Member[]> {
     if (shouldUseLocalStore()) {
       return sortMembers(readLocal().map(toMember))
     }
-    const db = await getDb()
-    const rows = await db.sql<DbMemberRow>`
-      SELECT id, name, email, paid, paid_at, created_at, updated_at
-      FROM members
-      ORDER BY name ASC
-    `
-    return rows.map((row) => toMember(rowToRecord(row)))
+    const records = await selectMembers()
+    await writeBlobMembers(records)
+    return sortMembers(records.map(toMember))
   },
 
   async getById(id: string): Promise<Member | null> {
@@ -146,6 +237,7 @@ export const memberStore = {
       VALUES (${fields.name}, ${fields.email}, ${fields.paid}, ${fields.paidAt})
       RETURNING id, name, email, paid, paid_at, created_at, updated_at
     `
+    await republishMembers()
     return toMember(rowToRecord(rows[0]))
   },
 
@@ -186,6 +278,7 @@ export const memberStore = {
       RETURNING id, name, email, paid, paid_at, created_at, updated_at
     `
     if (!rows[0]) throw new Error('Member not found')
+    await republishMembers()
     return toMember(rowToRecord(rows[0]))
   },
 
@@ -202,5 +295,6 @@ export const memberStore = {
       DELETE FROM members WHERE id = ${id} RETURNING id
     `
     if (!rows[0]) throw new Error('Member not found')
+    await republishMembers()
   },
 }

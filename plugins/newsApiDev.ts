@@ -182,7 +182,7 @@ async function handleGigs(req: IncomingMessage, res: ServerResponse, url: URL) {
     return
   }
 
-  const state = await gigStore.list()
+  const state = await gigStore.listPublished()
   const id = url.searchParams.get('id')?.trim()
   if (id) {
     const gig = state.gigs.find((g) => g.id === id)
@@ -467,7 +467,7 @@ async function handleMembers(req: IncomingMessage, res: ServerResponse, url: URL
       sendJson(res, 400, { error: 'Email is required' })
       return
     }
-    const member = await memberStore.getByEmail(email)
+    const member = await memberStore.getPublishedByEmail(email)
     if (!member) {
       sendJson(res, 404, { error: UNKNOWN_MEMBER_EMAIL })
       return
@@ -492,7 +492,7 @@ async function handleMembers(req: IncomingMessage, res: ServerResponse, url: URL
       sendJson(res, 200, { member: null })
       return
     }
-    const member = await memberStore.getById(memberId)
+    const member = await memberStore.getPublishedById(memberId)
     if (!member) {
       sendJson(
         res,
