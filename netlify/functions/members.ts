@@ -5,6 +5,7 @@ import {
   memberIdFromCookies,
   memberSessionCookieHeader,
 } from './_lib/auth.ts'
+import { connectBlobs } from './_lib/blobs.ts'
 import { json, noStoreHeaders, readJsonBody } from './_lib/http.ts'
 import { normalizeEmail } from './_lib/memberTypes.ts'
 import { memberStore } from './_lib/memberStore.ts'
@@ -12,6 +13,7 @@ import { memberStore } from './_lib/memberStore.ts'
 const UNKNOWN_EMAIL = "We don't have that email on the membership list."
 
 export const handler: Handler = async (event) => {
+  connectBlobs(event)
   if (event.httpMethod === 'OPTIONS') {
     return json(204, null)
   }

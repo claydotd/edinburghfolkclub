@@ -1,9 +1,11 @@
 import type { Handler } from '@netlify/functions'
+import { connectBlobs } from './_lib/blobs.ts'
 import { gigStore } from './_lib/gigStore.ts'
 import { json, publicCacheHeaders } from './_lib/http.ts'
 import { parseGigImageKey } from './_lib/gigTypes.ts'
 
 export const handler: Handler = async (event) => {
+  connectBlobs(event)
   if (event.httpMethod === 'OPTIONS') {
     return json(204, null)
   }

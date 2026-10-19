@@ -1,5 +1,6 @@
 import type { Handler } from '@netlify/functions'
 import { isAuthenticated } from './_lib/auth.ts'
+import { connectBlobs } from './_lib/blobs.ts'
 import { json, noStoreHeaders, readJsonBody } from './_lib/http.ts'
 import type { MemberInput } from './_lib/memberTypes.ts'
 import { validateMemberInput } from './_lib/memberTypes.ts'
@@ -16,6 +17,7 @@ function statusForStoreError(message: string, fallback: number): number {
 }
 
 export const handler: Handler = async (event) => {
+  connectBlobs(event)
   if (event.httpMethod === 'OPTIONS') {
     return json(204, null)
   }

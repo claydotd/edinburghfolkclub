@@ -6,6 +6,7 @@ import {
   passwordsMatch,
   sessionCookieHeader,
 } from './_lib/auth.ts'
+import { connectBlobs } from './_lib/blobs.ts'
 import { gigStore } from './_lib/gigStore.ts'
 import type { GigImageUpload, GigInput } from './_lib/gigTypes.ts'
 import { validateGigInput } from './_lib/gigTypes.ts'
@@ -85,6 +86,7 @@ function validateBannersInput(body: Partial<HomeBannersInput>): string | null {
 }
 
 export const handler: Handler = async (event) => {
+  connectBlobs(event)
   if (event.httpMethod === 'OPTIONS') {
     return json(204, null)
   }

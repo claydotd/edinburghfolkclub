@@ -10,7 +10,7 @@ export default function MembersGate() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const from =
-    (location.state as { from?: string } | null)?.from ?? '/members/account';
+    (location.state as { from?: string } | null)?.from ?? '/members/documents';
 
   if (!ready) {
     return (

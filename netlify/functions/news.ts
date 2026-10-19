@@ -1,8 +1,10 @@
 import type { Handler } from '@netlify/functions'
+import { connectBlobs } from './_lib/blobs.ts'
 import { json, publicCacheHeaders } from './_lib/http.ts'
 import { newsStore } from './_lib/store.ts'
 
 export const handler: Handler = async (event) => {
+  connectBlobs(event)
   if (event.httpMethod === 'OPTIONS') {
     return json(204, null)
   }

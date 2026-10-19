@@ -164,7 +164,8 @@ function rowsToState(rows: DbGigRow[]): GigsState {
 
 async function seedDatabaseGigs(): Promise<void> {
   const db = await getDb()
-  const seed = buildSeedGigsState()
+  const fromBlob = await readBlobGigs(false)
+  const seed = fromBlob.gigs.length > 0 ? fromBlob : buildSeedGigsState()
   for (const gig of seed.gigs) {
     await db.sql`
       INSERT INTO gigs (
