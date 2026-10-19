@@ -12,6 +12,7 @@ export const DEMO_SEED_POSTS: NewsPost[] = [
       'The 2026 Hamish Henderson Lecture, part of the Carrying Stream Festival, will be a relaxed and informal event presented by Janet Henderson, Hamish’s younger daughter, whose poetry was encouraged by her father when she was in her teens. After a career as a lawyer and raising a family, she returned to poetry and published her first collection in 2025. Realising that some of her poems were quietly asking for tunes, she is now moving into songwriting.\n\nThe Lecture is at The Scottish Storytelling Centre on Saturday 14 November. Tickets, which are free, can be booked via the SSC website. [Click here for more details and tickets](https://scottishstorytellingcentre.online.red61.co.uk/event/913:6913/913:30812/).',
     published: true,
     publishedAt: '2026-10-09T11:42:07.823Z',
+    hidePublishedDate: false,
     createdAt: '2026-10-09T11:42:07.823Z',
     updatedAt: '2026-10-14T11:20:37.278Z',
   },

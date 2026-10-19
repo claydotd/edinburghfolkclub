@@ -28,6 +28,7 @@ function postToSnapshotPost(post: NewsPost): NewsSnapshotPost {
     excerpt: post.excerpt,
     bodyMarkdown: post.bodyMarkdown,
     publishedAt: post.publishedAt,
+    hidePublishedDate: Boolean(post.hidePublishedDate),
   }
 }
 
@@ -226,6 +227,7 @@ function normalizePost(input: NewsPostInput, existing?: NewsPost): NewsPost {
         ? existing.publishedAt
         : now
       : null,
+    hidePublishedDate: Boolean(input.hidePublishedDate),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   }

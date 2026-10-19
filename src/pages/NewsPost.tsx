@@ -57,9 +57,9 @@ export default function NewsPost() {
         <Reveal variant="zoom" delay={100}>
           <header className="page-masthead news-article-masthead">
             <h1 className="page-title">{post.title}</h1>
-            {post.publishedAt ? (
+            {post.publishedAt && !post.hidePublishedDate ? (
               <time className="news-article-date" dateTime={post.publishedAt}>
-                {formatNewsDate(post.publishedAt)}
+                <em>Published:{formatNewsDate(post.publishedAt)}</em>
               </time>
             ) : null}
           </header>

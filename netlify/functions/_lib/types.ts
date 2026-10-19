@@ -6,6 +6,7 @@ export type NewsPost = {
   bodyMarkdown: string
   published: boolean
   publishedAt: string | null
+  hidePublishedDate: boolean
   createdAt: string
   updatedAt: string
 }
@@ -16,6 +17,7 @@ export type NewsPostInput = {
   excerpt?: string
   bodyMarkdown?: string
   published?: boolean
+  hidePublishedDate?: boolean
 }
 
 export const BANNER_COLORS = [
@@ -164,6 +166,7 @@ export type NewsSnapshotPost = {
   excerpt: string
   bodyMarkdown: string
   publishedAt: string | null
+  hidePublishedDate: boolean
 }
 
 export type NewsSnapshot = {
@@ -179,6 +182,7 @@ export type DbNewsRow = {
   body_markdown: string
   published: boolean
   published_at: string | Date | null
+  hide_published_date: boolean
   created_at: string | Date
   updated_at: string | Date
 }
@@ -192,6 +196,7 @@ export function rowToPost(row: DbNewsRow): NewsPost {
     bodyMarkdown: row.body_markdown ?? '',
     published: Boolean(row.published),
     publishedAt: toIso(row.published_at),
+    hidePublishedDate: Boolean(row.hide_published_date),
     createdAt: toIso(row.created_at) ?? new Date().toISOString(),
     updatedAt: toIso(row.updated_at) ?? new Date().toISOString(),
   }
@@ -205,6 +210,7 @@ export function postToSnapshotPost(post: NewsPost): NewsSnapshotPost {
     excerpt: post.excerpt,
     bodyMarkdown: post.bodyMarkdown,
     publishedAt: post.publishedAt,
+    hidePublishedDate: Boolean(post.hidePublishedDate),
   }
 }
 

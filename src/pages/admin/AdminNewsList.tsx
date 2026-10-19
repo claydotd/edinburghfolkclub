@@ -44,6 +44,7 @@ export default function AdminNewsList() {
         excerpt: post.excerpt,
         bodyMarkdown: post.bodyMarkdown,
         published: !post.published,
+        hidePublishedDate: post.hidePublishedDate,
       })
       setReloadToken((n) => n + 1)
     } catch (err) {

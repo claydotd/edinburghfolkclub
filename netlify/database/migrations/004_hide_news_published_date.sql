@@ -1,0 +1,2 @@
+ALTER TABLE news_posts
+  ADD COLUMN hide_published_date BOOLEAN NOT NULL DEFAULT FALSE;

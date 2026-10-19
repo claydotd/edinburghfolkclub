@@ -58,6 +58,7 @@ function normalizeBlobPost(input: NewsPostInput, existing?: NewsPost): NewsPost 
     bodyMarkdown: input.bodyMarkdown ?? '',
     published,
     publishedAt,
+    hidePublishedDate: Boolean(input.hidePublishedDate),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   }
@@ -76,7 +77,7 @@ async function blobStore() {
 async function rebuildSnapshotFromDb(): Promise<NewsSnapshot> {
   const db = await getDb()
   const rows = await db.sql<DbNewsRow>`
-    SELECT id, slug, title, excerpt, body_markdown, published, published_at, created_at, updated_at
+    SELECT id, slug, title, excerpt, body_markdown, published, published_at, hide_published_date, created_at, updated_at
     FROM news_posts
     WHERE published = TRUE
     ORDER BY published_at DESC NULLS LAST
@@ -123,6 +124,7 @@ async function listBlobPosts(): Promise<NewsPost[]> {
     snapshot.posts.map((post) => ({
       ...post,
       published: true,
+      hidePublishedDate: Boolean(post.hidePublishedDate),
       createdAt: post.publishedAt ?? snapshot.updatedAt,
       updatedAt: snapshot.updatedAt,
     })),
@@ -153,7 +155,7 @@ export const newsStore = {
     if (!(await databaseIsConfigured())) return listBlobPosts()
     const db = await getDb()
     const rows = await db.sql<DbNewsRow>`
-      SELECT id, slug, title, excerpt, body_markdown, published, published_at, created_at, updated_at
+      SELECT id, slug, title, excerpt, body_markdown, published, published_at, hide_published_date, created_at, updated_at
       FROM news_posts
       ORDER BY updated_at DESC
     `
@@ -168,7 +170,7 @@ export const newsStore = {
     }
     const db = await getDb()
     const rows = await db.sql<DbNewsRow>`
-      SELECT id, slug, title, excerpt, body_markdown, published, published_at, created_at, updated_at
+      SELECT id, slug, title, excerpt, body_markdown, published, published_at, hide_published_date, created_at, updated_at
       FROM news_posts
       WHERE id = ${id}
       LIMIT 1
@@ -192,16 +194,17 @@ export const newsStore = {
     const published = Boolean(input.published)
     const publishedAt = published ? new Date().toISOString() : null
     const rows = await db.sql<DbNewsRow>`
-      INSERT INTO news_posts (slug, title, excerpt, body_markdown, published, published_at)
+      INSERT INTO news_posts (slug, title, excerpt, body_markdown, published, published_at, hide_published_date)
       VALUES (
         ${input.slug.trim()},
         ${input.title.trim()},
         ${(input.excerpt ?? '').trim()},
         ${input.bodyMarkdown ?? ''},
         ${published},
-        ${publishedAt}
+        ${publishedAt},
+        ${Boolean(input.hidePublishedDate)}
       )
-      RETURNING id, slug, title, excerpt, body_markdown, published, published_at, created_at, updated_at
+      RETURNING id, slug, title, excerpt, body_markdown, published, published_at, hide_published_date, created_at, updated_at
     `
     await rebuildSnapshotFromDb()
     return rowToPost(rows[0])
@@ -240,9 +243,10 @@ export const newsStore = {
         body_markdown = ${input.bodyMarkdown ?? ''},
         published = ${published},
         published_at = ${publishedAt},
+        hide_published_date = ${Boolean(input.hidePublishedDate)},
         updated_at = NOW()
       WHERE id = ${id}
-      RETURNING id, slug, title, excerpt, body_markdown, published, published_at, created_at, updated_at
+      RETURNING id, slug, title, excerpt, body_markdown, published, published_at, hide_published_date, created_at, updated_at
     `
     if (!rows[0]) throw new Error('Post not found')
     await rebuildSnapshotFromDb()

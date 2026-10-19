@@ -23,6 +23,7 @@ export default function AdminNewsEdit() {
   const [excerpt, setExcerpt] = useState('')
   const [bodyMarkdown, setBodyMarkdown] = useState('')
   const [published, setPublished] = useState(false)
+  const [hidePublishedDate, setHidePublishedDate] = useState(false)
 
   useEffect(() => {
     if (isNew) return
@@ -36,6 +37,7 @@ export default function AdminNewsEdit() {
         setExcerpt(post.excerpt)
         setBodyMarkdown(post.bodyMarkdown)
         setPublished(post.published)
+        setHidePublishedDate(Boolean(post.hidePublishedDate))
         setLoadError(null)
         setLoadedId(post.id)
       })
@@ -65,6 +67,7 @@ export default function AdminNewsEdit() {
       excerpt,
       bodyMarkdown,
       published,
+      hidePublishedDate,
     }
     try {
       if (isNew) {
@@ -172,6 +175,16 @@ export default function AdminNewsEdit() {
             onChange={(e) => setPublished(e.target.checked)}
           />
           <span>Published (visible on /news)</span>
+        </label>
+
+        <label className="form-field consent-field admin-toggle">
+          <input
+            type="checkbox"
+            name="hidePublishedDate"
+            checked={hidePublishedDate}
+            onChange={(e) => setHidePublishedDate(e.target.checked)}
+          />
+          <span>Hide published date</span>
         </label>
 
         <MarkdownEditor value={bodyMarkdown} onChange={setBodyMarkdown} />

@@ -5,6 +5,7 @@ export type NewsSnapshotPost = {
   excerpt: string
   bodyMarkdown: string
   publishedAt: string | null
+  hidePublishedDate: boolean
 }
 
 export type NewsSnapshot = {
@@ -20,6 +21,7 @@ export type NewsPost = {
   bodyMarkdown: string
   published: boolean
   publishedAt: string | null
+  hidePublishedDate: boolean
   createdAt: string
   updatedAt: string
 }
@@ -30,6 +32,7 @@ export type NewsPostInput = {
   excerpt?: string
   bodyMarkdown?: string
   published?: boolean
+  hidePublishedDate?: boolean
 }
 
 export const BANNER_COLORS = [

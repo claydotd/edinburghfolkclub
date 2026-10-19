@@ -307,7 +307,7 @@ export default function News() {
                         <li>
                           <Link to={`/news/${post.slug}`}>
                             <span className="news-list-title">{post.title}</span>
-                            {post.publishedAt ? (
+                            {post.publishedAt && !post.hidePublishedDate ? (
                               <time
                                 className="news-list-date"
                                 dateTime={post.publishedAt}
