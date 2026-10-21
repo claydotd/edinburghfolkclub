@@ -36,17 +36,24 @@ function toGig(gig: { id: string; date: string; name: string }): ReservationGig 
   return { id: gig.id, date: gig.date, name: gig.name }
 }
 
+function viewForMember(
+  gigs: { id: string; date: string; name: string }[],
+  reservations: { gigId: string }[],
+): MemberReservations {
+  const reservedIds = new Set(reservations.map((reservation) => reservation.gigId))
+  const upcoming = gigs.filter((gig) => isUpcoming(gig.date))
+  return {
+    available: upcoming.filter((gig) => !reservedIds.has(gig.id)).map(toGig),
+    reserved: upcoming.filter((gig) => reservedIds.has(gig.id)).map(toGig),
+  }
+}
+
 export async function memberReservationView(memberId: string): Promise<MemberReservations> {
   const [state, reservations] = await Promise.all([
     gigStore.listPublished(),
     reservationStore.listByMember(memberId),
   ])
-  const reservedIds = new Set(reservations.map((reservation) => reservation.gigId))
-  const gigs = state.gigs.filter((gig) => isUpcoming(gig.date))
-  return {
-    available: gigs.filter((gig) => !reservedIds.has(gig.id)).map(toGig),
-    reserved: gigs.filter((gig) => reservedIds.has(gig.id)).map(toGig),
-  }
+  return viewForMember(state.gigs, reservations)
 }
 
 export async function createMemberReservations(
@@ -65,7 +72,8 @@ export async function createMemberReservations(
   }
 
   try {
-    await reservationStore.createMany(memberId, ids)
+    const saved = await reservationStore.createMany(memberId, ids)
+    return viewForMember(state.gigs, saved)
   } catch (err) {
     const message = err instanceof Error ? err.message : ''
     if (/foreign key|violates/i.test(message)) {
@@ -73,8 +81,6 @@ export async function createMemberReservations(
     }
     throw err
   }
-
-  return memberReservationView(memberId)
 }
 
 export async function adminReservationView(): Promise<AdminGigReservations[]> {

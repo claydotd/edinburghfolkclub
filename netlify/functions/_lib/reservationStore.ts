@@ -74,7 +74,9 @@ function writeLocal(reservations: ReservationRecord[]) {
 }
 
 async function reservationsBlobStore() {
-  return getStore({ name: RESERVATIONS_BLOB_STORE, consistency: 'strong' })
+  // Eventual consistency: this functions runtime has no uncached edge URL,
+  // and a strong read throws.
+  return getStore({ name: RESERVATIONS_BLOB_STORE, consistency: 'eventual' })
 }
 
 async function readBlob(): Promise<ReservationRecord[]> {
@@ -137,42 +139,34 @@ export const reservationStore = {
     return rows.map(rowToRecord)
   },
 
-  /** Inserts missing rows. An id this member already reserved is left as it is. */
-  async createMany(memberId: string, gigIds: string[]): Promise<void> {
-    const existing = new Set(
-      (await this.listByMember(memberId)).map((reservation) => reservation.gigId),
-    )
+  /**
+   * Inserts missing rows. An id this member already reserved is left as it is.
+   * Returns this member's reservations, including the rows just written, so the
+   * caller does not have to read the blob again.
+   */
+  async createMany(memberId: string, gigIds: string[]): Promise<ReservationRecord[]> {
+    const existingRecords = await this.listByMember(memberId)
+    const existing = new Set(existingRecords.map((reservation) => reservation.gigId))
     const toInsert = uniqueIds(gigIds).filter((gigId) => !existing.has(gigId))
-    if (toInsert.length === 0) return
+    if (toInsert.length === 0) return existingRecords
+
+    const now = new Date().toISOString()
+    const added: ReservationRecord[] = toInsert.map((gigId) => ({
+      id: randomUUID(),
+      memberId,
+      gigId,
+      createdAt: now,
+    }))
 
     if (shouldUseLocalStore()) {
-      const reservations = readLocal()
-      const now = new Date().toISOString()
-      for (const gigId of toInsert) {
-        reservations.push({
-          id: randomUUID(),
-          memberId,
-          gigId,
-          createdAt: now,
-        })
-      }
-      writeLocal(reservations)
-      return
+      writeLocal([...readLocal(), ...added])
+      return [...existingRecords, ...added]
     }
 
     if (!(await databaseIsConfigured())) {
       const reservations = await readBlob()
-      const now = new Date().toISOString()
-      for (const gigId of toInsert) {
-        reservations.push({
-          id: randomUUID(),
-          memberId,
-          gigId,
-          createdAt: now,
-        })
-      }
-      await writeBlob(reservations)
-      return
+      await writeBlob([...reservations, ...added])
+      return [...existingRecords, ...added]
     }
 
     const db = await getDb()
@@ -183,6 +177,7 @@ export const reservationStore = {
         ON CONFLICT (member_id, gig_id) DO NOTHING
       `
     }
+    return this.listByMember(memberId)
   },
 
   async removeOne(memberId: string, gigId: string): Promise<void> {
