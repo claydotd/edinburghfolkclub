@@ -4,6 +4,7 @@ import Header from './components/Header.tsx'
 import Footer from './components/Footer.tsx'
 import ScrollToTop from './components/ScrollToTop.tsx'
 import Home from './pages/Home.tsx'
+import PastGigs from './pages/PastGigs.tsx'
 import About from './pages/About.tsx'
 import Contact from './pages/Contact.tsx'
 import Gallery from './pages/Gallery.tsx'
@@ -26,6 +27,7 @@ import AdminHomeBanner from './pages/admin/AdminHomeBanner.tsx'
 import AdminGigsList from './pages/admin/AdminGigsList.tsx'
 import AdminGigEdit from './pages/admin/AdminGigEdit.tsx'
 import AdminMembers from './pages/admin/AdminMembers.tsx'
+import AdminReservations from './pages/admin/AdminReservations.tsx'
 import RequireAdmin from './news/RequireAdmin.tsx'
 
 function PublicShell() {
@@ -50,7 +52,9 @@ function App() {
               <Route path="list" element={<AdminNewsList />} />
               <Route path="banner" element={<AdminHomeBanner />} />
               <Route path="gigs" element={<AdminGigsList />} />
+              <Route path="gigs/archive" element={<AdminGigsList archive />} />
               <Route path="members" element={<AdminMembers />} />
+              <Route path="reservations" element={<AdminReservations />} />
               <Route path="gigs/new" element={<AdminGigEdit />} />
               <Route path="gigs/:id" element={<AdminGigEdit />} />
               <Route path="new" element={<AdminNewsEdit />} />
@@ -61,6 +65,7 @@ function App() {
 
         <Route element={<PublicShell />}>
           <Route path="/" element={<Home />} />
+          <Route path="/past-gigs" element={<PastGigs />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/contact/play-at-efc" element={<PlayEFC />} />

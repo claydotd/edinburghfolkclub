@@ -27,6 +27,13 @@ import {
   normalizeEmail,
   validateMemberInput,
 } from '../netlify/functions/_lib/memberTypes.ts'
+import { reservationStore } from '../netlify/functions/_lib/reservationStore.ts'
+import {
+  adminReservationView,
+  createMemberReservations,
+  memberReservationView,
+  reservationErrorStatus,
+} from '../netlify/functions/_lib/reservations.ts'
 import type {
   HomeBannerInput,
   HomeBannersInput,
@@ -486,6 +493,45 @@ async function handleMembers(req: IncomingMessage, res: ServerResponse, url: URL
     return
   }
 
+  if (action === 'reservations') {
+    const memberId = memberIdFromCookies(req.headers.cookie)
+    if (!memberId) {
+      sendJson(res, 401, { error: 'Sign in to reserve tickets' })
+      return
+    }
+    const member = await memberStore.getPublishedById(memberId)
+    if (!member) {
+      sendJson(
+        res,
+        401,
+        { error: 'Sign in to reserve tickets' },
+        { 'Set-Cookie': clearMemberSessionCookieHeader() },
+      )
+      return
+    }
+
+    if (req.method === 'GET') {
+      sendJson(res, 200, await memberReservationView(member.id))
+      return
+    }
+
+    if (req.method === 'POST') {
+      const raw = await readBody(req)
+      const body = raw ? (JSON.parse(raw) as { gigIds?: unknown }) : {}
+      if (!Array.isArray(body.gigIds) || body.gigIds.some((id) => typeof id !== 'string')) {
+        sendJson(res, 400, { error: 'Choose a gig to reserve' })
+        return
+      }
+      try {
+        sendJson(res, 200, await createMemberReservations(member.id, body.gigIds))
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Save failed'
+        sendJson(res, reservationErrorStatus(message), { error: message })
+      }
+      return
+    }
+  }
+
   if (req.method === 'GET' && action === 'session') {
     const memberId = memberIdFromCookies(req.headers.cookie)
     if (!memberId) {
@@ -525,6 +571,29 @@ async function handleMembersAdmin(
   }
 
   const id = url.searchParams.get('id')?.trim()
+  const action = url.searchParams.get('action')
+
+  if (req.method === 'GET' && action === 'reservations') {
+    sendJson(res, 200, { gigs: await adminReservationView() })
+    return
+  }
+
+  if (req.method === 'DELETE' && action === 'reservations') {
+    const gigId = url.searchParams.get('gigId')?.trim()
+    const memberId = url.searchParams.get('memberId')?.trim()
+    if (!gigId || !memberId) {
+      sendJson(res, 400, { error: 'Missing reservation' })
+      return
+    }
+    try {
+      await reservationStore.removeOne(memberId, gigId)
+      sendJson(res, 200, { gigs: await adminReservationView() })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Delete failed'
+      sendJson(res, storeErrorStatus(message, 500), { error: message })
+    }
+    return
+  }
 
   if (req.method === 'GET') {
     if (id) {

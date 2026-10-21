@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMembership } from '../../membership/useMembership';
+import { isNewsDemo } from '../../news/api';
 import Reveal from '../../components/Reveal';
 
 export default function MembersLayout() {
@@ -18,7 +19,7 @@ export default function MembersLayout() {
       </div>
       <nav className="members-nav" aria-label="Members">
         <NavLink to="/members/documents">Documents</NavLink>
-        {/* <NavLink to="/members/tickets">Tickets</NavLink> */}
+        {isNewsDemo() ? null : <NavLink to="/members/tickets">Tickets</NavLink>}
         <NavLink to="/members/account">Account</NavLink>
       </nav>
       <Outlet />

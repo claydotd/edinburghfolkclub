@@ -9,6 +9,11 @@ import { connectBlobs } from './_lib/blobs.ts'
 import { json, noStoreHeaders, readJsonBody } from './_lib/http.ts'
 import { normalizeEmail } from './_lib/memberTypes.ts'
 import { memberStore } from './_lib/memberStore.ts'
+import {
+  createMemberReservations,
+  memberReservationView,
+  reservationErrorStatus,
+} from './_lib/reservations.ts'
 
 const UNKNOWN_EMAIL = "We don't have that email on the membership list."
 
@@ -52,6 +57,43 @@ export const handler: Handler = async (event) => {
           'Set-Cookie': clearMemberSessionCookieHeader(),
         },
       )
+    }
+
+    if (action === 'reservations') {
+      const memberId = memberIdFromCookies(cookies)
+      if (!memberId) {
+        return json(401, { error: 'Sign in to reserve tickets' }, noStoreHeaders())
+      }
+      const member = await memberStore.getPublishedById(memberId)
+      if (!member) {
+        return json(
+          401,
+          { error: 'Sign in to reserve tickets' },
+          {
+            ...noStoreHeaders(),
+            'Set-Cookie': clearMemberSessionCookieHeader(),
+          },
+        )
+      }
+
+      if (event.httpMethod === 'GET') {
+        const reservations = await memberReservationView(member.id)
+        return json(200, reservations, noStoreHeaders())
+      }
+
+      if (event.httpMethod === 'POST') {
+        const body = await readJsonBody<{ gigIds?: unknown }>(event.body)
+        if (!Array.isArray(body.gigIds) || body.gigIds.some((id) => typeof id !== 'string')) {
+          return json(400, { error: 'Choose a gig to reserve' }, noStoreHeaders())
+        }
+        try {
+          const reservations = await createMemberReservations(member.id, body.gigIds)
+          return json(200, reservations, noStoreHeaders())
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Save failed'
+          return json(reservationErrorStatus(message), { error: message }, noStoreHeaders())
+        }
+      }
     }
 
     if (event.httpMethod === 'GET' && action === 'session') {

@@ -5,6 +5,8 @@ import { json, noStoreHeaders, readJsonBody } from './_lib/http.ts'
 import type { MemberInput } from './_lib/memberTypes.ts'
 import { validateMemberInput } from './_lib/memberTypes.ts'
 import { memberStore } from './_lib/memberStore.ts'
+import { adminReservationView } from './_lib/reservations.ts'
+import { reservationStore } from './_lib/reservationStore.ts'
 
 function unauthorized() {
   return json(401, { error: 'Unauthorized' }, noStoreHeaders())
@@ -26,8 +28,14 @@ export const handler: Handler = async (event) => {
   if (!isAuthenticated(cookies)) return unauthorized()
 
   const id = event.queryStringParameters?.id
+  const action = event.queryStringParameters?.action
 
   try {
+    if (event.httpMethod === 'GET' && action === 'reservations') {
+      const gigs = await adminReservationView()
+      return json(200, { gigs }, noStoreHeaders())
+    }
+
     if (event.httpMethod === 'GET') {
       if (id) {
         const member = await memberStore.getById(id)
@@ -61,6 +69,22 @@ export const handler: Handler = async (event) => {
         return json(200, { member }, noStoreHeaders())
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Update failed'
+        return json(statusForStoreError(message, 500), { error: message }, noStoreHeaders())
+      }
+    }
+
+    if (event.httpMethod === 'DELETE' && action === 'reservations') {
+      const gigId = event.queryStringParameters?.gigId?.trim()
+      const memberId = event.queryStringParameters?.memberId?.trim()
+      if (!gigId || !memberId) {
+        return json(400, { error: 'Missing reservation' }, noStoreHeaders())
+      }
+      try {
+        await reservationStore.removeOne(memberId, gigId)
+        const gigs = await adminReservationView()
+        return json(200, { gigs }, noStoreHeaders())
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Delete failed'
         return json(statusForStoreError(message, 500), { error: message }, noStoreHeaders())
       }
     }

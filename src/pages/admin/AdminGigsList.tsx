@@ -4,7 +4,7 @@ import { adminDeleteGig, adminListGigs } from '../../gigs/api'
 import type { Gig } from '../../gigs/types'
 import { formatGigDate, isPastGigDate } from '../../gigs/types'
 
-export default function AdminGigsList() {
+export default function AdminGigsList({ archive = false }: { archive?: boolean }) {
   const [gigs, setGigs] = useState<Gig[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -46,29 +46,38 @@ export default function AdminGigsList() {
     }
   }
 
-  const pastCount = gigs?.filter((g) => isPastGigDate(g.date)).length ?? 0
+  const visible = (gigs ?? []).filter(
+    (gig) => isPastGigDate(gig.date) === archive,
+  )
+  if (archive) visible.reverse()
 
   return (
     <main className="page admin-page">
       <header className="admin-page-header">
         <div>
-          <h1 className="page-title">Gigs</h1>
+          {archive ? (
+            <Link to="/admin/gigs" className="admin-back-link">
+              ← Upcoming gigs
+            </Link>
+          ) : null}
+          <h1 className="page-title">{archive ? 'Past gigs' : 'Gigs'}</h1>
           <p className="page-lede">
-            Manage the homepage gig list.
+            {archive
+              ? 'Gigs whose date has passed are kept here.'
+              : 'Manage upcoming gigs on the homepage.'}
           </p>
         </div>
-        <Link to="/admin/gigs/new" className="admin-primary-link">
-          New gig
-        </Link>
+        <div className="admin-header-actions">
+          {archive ? null : (
+            <Link to="/admin/gigs/archive" className="admin-secondary-link">
+              Past gigs
+            </Link>
+          )}
+          <Link to="/admin/gigs/new" className="admin-primary-link">
+            New gig
+          </Link>
+        </div>
       </header>
-
-      {pastCount > 0 ? (
-        <p className="admin-gig-past-banner" role="status">
-          {pastCount === 1
-            ? '1 past gig should be deleted from the list.'
-            : `${pastCount} past gigs should be deleted from the list.`}
-        </p>
-      ) : null}
 
       {error ? (
         <p className="news-error" role="alert">
@@ -78,58 +87,49 @@ export default function AdminGigsList() {
 
       {gigs === null ? (
         <p className="admin-loading">Loading gigs…</p>
-      ) : gigs.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="admin-empty">
-          <p className="page-lede">No gigs yet.</p>
-          <Link to="/admin/gigs/new" className="admin-primary-link">
-            Add the first gig
-          </Link>
+          <p className="page-lede">
+            {archive ? 'No past gigs yet.' : 'No upcoming gigs.'}
+          </p>
+          {!archive && gigs.length === 0 ? (
+            <Link to="/admin/gigs/new" className="admin-primary-link">
+              Add the first gig
+            </Link>
+          ) : null}
         </div>
       ) : (
         <ul className="admin-post-list">
-          {gigs.map((gig) => {
-            const past = isPastGigDate(gig.date)
-            return (
-              <li
-                key={gig.id}
-                className={`admin-post-row${past ? ' admin-gig-row--past' : ''}`}
-              >
-                <div className="admin-post-meta">
-                  <Link to={`/admin/gigs/${gig.id}`} className="admin-post-title">
-                    {gig.name}
-                  </Link>
-                  <span className="admin-post-slug">{formatGigDate(gig.date)}</span>
-                  <div className="admin-post-status-row">
-                    {past ? (
-                      <span className="admin-post-status is-past">
-                        Past: please delete
-                      </span>
-                    ) : (
-                      <span className="admin-post-status is-published">Upcoming</span>
-                    )}
-                    {gig.imagepath ? (
-                      <span className="admin-post-date">Has image</span>
-                    ) : (
-                      <span className="admin-post-date">No image</span>
-                    )}
-                  </div>
+          {visible.map((gig) => (
+            <li key={gig.id} className="admin-post-row">
+              <div className="admin-post-meta">
+                <Link to={`/admin/gigs/${gig.id}`} className="admin-post-title">
+                  {gig.name}
+                </Link>
+                <span className="admin-post-slug">{formatGigDate(gig.date)}</span>
+                <div className="admin-post-status-row">
+                  {gig.imagepath ? (
+                    <span className="admin-post-date">Has image</span>
+                  ) : (
+                    <span className="admin-post-date">No image</span>
+                  )}
                 </div>
-                <div className="admin-post-actions">
-                  <Link to={`/admin/gigs/${gig.id}`} className="admin-action-link">
-                    Edit
-                  </Link>
-                  <button
-                    type="button"
-                    className="admin-action-btn admin-post-delete"
-                    disabled={busyId === gig.id}
-                    onClick={() => void onDelete(gig)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            )
-          })}
+              </div>
+              <div className="admin-post-actions">
+                <Link to={`/admin/gigs/${gig.id}`} className="admin-action-link">
+                  Edit
+                </Link>
+                <button
+                  type="button"
+                  className="admin-action-btn admin-post-delete"
+                  disabled={busyId === gig.id}
+                  onClick={() => void onDelete(gig)}
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
     </main>

@@ -179,21 +179,24 @@ export default function AdminGigEdit() {
         </header>
         <p className="page-lede">
           <Link to="/admin/gigs" className="admin-back-link">
-            ← All gigs
+            ← Upcoming gigs
           </Link>
         </p>
       </main>
     )
   }
 
-  const past = form.date ? isPastGigDate(form.date) : false
+  const past = !isNew && form.date ? isPastGigDate(form.date) : false
 
   return (
     <main className="page admin-page admin-edit-page">
       <header className="admin-page-header">
         <div>
-          <Link to="/admin/gigs" className="admin-back-link">
-            ← All gigs
+          <Link
+            to={past ? '/admin/gigs/archive' : '/admin/gigs'}
+            className="admin-back-link"
+          >
+            ← {past ? 'Past gigs' : 'Upcoming gigs'}
           </Link>
           <h1 className="page-title">{isNew ? 'New gig' : 'Edit gig'}</h1>
           <p className="page-lede">
@@ -203,13 +206,6 @@ export default function AdminGigEdit() {
           </p>
         </div>
       </header>
-
-      {past ? (
-        <p className="admin-gig-past-banner" role="status">
-          This gig date has passed. Delete it from the gig list when you no longer
-          need it.
-        </p>
-      ) : null}
 
       <form className="site-form site-form--wide admin-edit-form" onSubmit={onSubmit}>
         <div className="admin-edit-grid">

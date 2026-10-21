@@ -14,6 +14,7 @@ import {
 } from './memberTypes.ts'
 import { databaseIsConfigured, getDatabaseClient } from './database.ts'
 import { localDataDir, shouldUseLocalStore } from './localDataDir.ts'
+import { reservationStore } from './reservationStore.ts'
 
 const MEMBERS_BLOB_STORE = 'members'
 const MEMBERS_LIST_KEY = 'list'
@@ -323,6 +324,7 @@ export const memberStore = {
       const next = members.filter((member) => member.id !== id)
       if (next.length === members.length) throw new Error('Member not found')
       writeLocal(next)
+      await reservationStore.removeByMember(id)
       return
     }
     if (!(await databaseIsConfigured())) {
@@ -330,6 +332,7 @@ export const memberStore = {
       const next = members.filter((member) => member.id !== id)
       if (next.length === members.length) throw new Error('Member not found')
       await writeBlobMembers(next)
+      await reservationStore.removeByMember(id)
       return
     }
     const db = await getDb()
@@ -338,5 +341,6 @@ export const memberStore = {
     `
     if (!rows[0]) throw new Error('Member not found')
     await republishMembers()
+    await reservationStore.removeByMember(id)
   },
 }

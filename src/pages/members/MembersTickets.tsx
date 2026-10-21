@@ -1,16 +1,83 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react'
+import { formatGigDate } from '../../gigs/types'
+import {
+  fetchMemberReservations,
+  reserveMemberGigs,
+} from '../../membership/api'
+import type { MemberReservations } from '../../membership/types'
+import { isNewsDemo } from '../../news/api'
 
-/**
- * Layout-only reservation UI.
- * TODO(Phase 2): wire booking flow once ticket reservation approach is decided.
- */
+const CANCEL_MAILTO = 'mailto:members@efc1973.com'
+
 export default function MembersTickets() {
-  const [submitted, setSubmitted] = useState(false);
+  const demo = isNewsDemo()
+  const [reservations, setReservations] = useState<MemberReservations | null>(null)
+  const [selected, setSelected] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setSubmitted(true);
+  useEffect(() => {
+    if (demo) return
+    let cancelled = false
+    fetchMemberReservations()
+      .then((data) => {
+        if (!cancelled) {
+          setReservations(data)
+          setError(null)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load gigs')
+          setReservations({ available: [], reserved: [] })
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [demo])
+
+  function toggleGig(id: string) {
+    setSelected((current) =>
+      current.includes(id) ? current.filter((gigId) => gigId !== id) : [...current, id],
+    )
   }
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (selected.length === 0) {
+      setError('Choose a gig to reserve')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const data = await reserveMemberGigs(selected)
+      setReservations(data)
+      setSelected([])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Reservation failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (demo) {
+    return (
+      <main className="page members-tickets">
+        <header className="page-masthead">
+          <h1 className="page-title">Members’ tickets</h1>
+          <p className="page-lede">
+            Ticket reservations are stored on the Netlify site. This preview
+            does not keep reservations.
+          </p>
+        </header>
+      </main>
+    )
+  }
+
+  const available = reservations?.available ?? []
+  const reserved = reservations?.reserved ?? []
 
   return (
     <main className="page members-tickets">
@@ -19,42 +86,79 @@ export default function MembersTickets() {
         <p className="page-lede">
           Reserve members’-price tickets for an upcoming night.
         </p>
+        <p className="members-ticket-cancel">
+          <em>Can't go to a gig you reserved? email <a href={CANCEL_MAILTO}>members@efc1973.com</a> to cancel.</em>
+        </p>
       </header>
 
-      {submitted ? (
-        <p className="form-success" role="status">
-          Reservation noted in the prototype. Live booking will be connected
-          later.
+      {error ? (
+        <p className="news-error" role="alert">
+          {error}
         </p>
+      ) : null}
+
+      {reservations === null ? (
+        <p className="admin-loading">Loading gigs…</p>
       ) : (
-        <form className="site-form" onSubmit={handleSubmit}>
-          <label className="form-field">
-            <span>Gig</span>
-            <select name="gig" required defaultValue="">
-              <option value="" disabled>
-                Select a night…
-              </option>
-              <option value="2026-09-30">Àirdan — 30 Sep 2026</option>
-              <option value="2026-10-04">Alan Reid & Christine Kydd — 4 Oct 2026</option>
-              <option value="2026-10-28">Iona Fyfe — 28 Oct 2026</option>
-            </select>
-          </label>
-          <label className="form-field">
-            <span>Number of tickets</span>
-            <input
-              type="number"
-              name="quantity"
-              min={1}
-              max={4}
-              defaultValue={1}
-              required
-            />
-          </label>
-          <button type="submit" className="form-submit">
-            Request reservation
-          </button>
-        </form>
+        <>
+          <section className="members-ticket-reserve" aria-labelledby="reserve-heading">
+            <h2 id="reserve-heading">Reserve a ticket</h2>
+            {available.length === 0 ? (
+              <p>
+                {reserved.length === 0
+                  ? 'No upcoming gigs to reserve.'
+                  : 'You have reserved every upcoming gig.'}
+              </p>
+            ) : (
+              <form className="site-form" onSubmit={onSubmit}>
+                <fieldset className="members-ticket-fieldset">
+                  <legend>Upcoming gigs</legend>
+                  <ul className="members-ticket-gigs">
+                    {available.map((gig) => (
+                      <li key={gig.id}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            name="gigIds"
+                            value={gig.id}
+                            checked={selected.includes(gig.id)}
+                            onChange={() => toggleGig(gig.id)}
+                          />
+                          <span>
+                            {gig.name}
+                            <span className="members-ticket-date">
+                              {formatGigDate(gig.date)}
+                            </span>
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </fieldset>
+                <button type="submit" className="form-submit" disabled={busy}>
+                  {busy ? 'Reserving…' : 'Reserve tickets'}
+                </button>
+              </form>
+            )}
+          </section>
+
+          <section className="members-ticket-reserved" aria-labelledby="reserved-heading">
+            <h2 id="reserved-heading">Your reservations</h2>
+            {reserved.length === 0 ? (
+              <p>You have not reserved any upcoming gigs.</p>
+            ) : (
+              <ul className="members-reserved-list">
+                {reserved.map((gig) => (
+                  <li key={gig.id}>
+                    <span className="members-reserved-name">{gig.name}</span>
+                    <span className="members-ticket-date">{formatGigDate(gig.date)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
       )}
     </main>
-  );
+  )
 }

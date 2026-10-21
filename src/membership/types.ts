@@ -34,3 +34,28 @@ export function memberStatusLabel(member: Pick<Member, 'paid' | 'current'>): str
   if (!member.paid) return 'Unpaid'
   return member.current ? 'Current' : 'Expired'
 }
+
+export type ReservationGig = {
+  id: string
+  date: string
+  name: string
+}
+
+export type MemberReservations = {
+  available: ReservationGig[]
+  reserved: ReservationGig[]
+}
+
+export type AdminReservationMember = {
+  id: string
+  name: string
+  email: string
+}
+
+export type AdminGigReservations = {
+  id: string
+  date: string
+  name: string
+  count: number
+  members: AdminReservationMember[]
+}

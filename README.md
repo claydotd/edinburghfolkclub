@@ -91,7 +91,7 @@ The homepage reads a **Blobs snapshot** via `/.netlify/functions/gigs` (CDN-cach
 
 ## Members
 
-Anyone whose email is on the list can open `/members`. Paid status does not lock documents; it is a committee record. Sign-in and the session check read a **Blobs snapshot**; Postgres is only used from `/admin/members`.
+Anyone whose email is on the list can open `/members`. Paid status does not lock documents; it is a committee record. Sign-in and the session check read a **Blobs snapshot**. Postgres is used from `/admin/members` and from ticket reservations.
 
 | Piece | Role |
 |-------|------|
@@ -99,9 +99,15 @@ Anyone whose email is on the list can open `/members`. Paid status does not lock
 | Blobs store `members` / key `list` | Server-only snapshot for sign-in and session. Not returned as a public list |
 | Expiry | Paid date plus one calendar year. Current only when Paid is ticked and today is before that date |
 | `/.netlify/functions/members` | Email sign-in and session from the snapshot (no database). Logout clears cookie `efc_member` |
+| `/.netlify/functions/members?action=reservations` | Signed-in member lists upcoming gigs and reserves one ticket per gig |
 | `/.netlify/functions/members-admin` | List, create, update, delete. Database when connected, otherwise the snapshot. A database save rebuilds the snapshot |
+| `/.netlify/functions/members-admin?action=reservations` | Upcoming gigs with how many people reserved, and who they are |
+| `gig_reservations` table | One row per member per gig (migration `005_create_gig_reservations.sql`). Database when connected |
+| Blobs store `reservations` / key `list` | Reservation list when the database is not connected. Not a public snapshot |
 | `/admin/members` | Admin screen for the list. Opening it publishes the current table into the snapshot |
+| `/admin/reservations` | Upcoming gigs, reservation counts, and the people who reserved |
 | `.data/members-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
+| `.data/reservations-local.json` | File-backed reservations for Vite/`NEWS_USE_LOCAL` (gitignored) |
 
 ## Forms
 

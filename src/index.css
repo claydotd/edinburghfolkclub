@@ -1222,8 +1222,12 @@ a {
     margin: 0 auto 2rem;
   }
 
-  .flyer-list {
+  .flyer-list,
+  .flyer-archive {
     width: min(100%, var(--flyer-content-w));
+  }
+
+  .flyer-list {
     border-top: 1px solid var(--border);
   }
 
@@ -2636,6 +2640,90 @@ a {
   font-family: var(--sans);
 }
 
+.members-ticket-reserve,
+.members-ticket-reserved {
+  margin-top: 1.75rem;
+}
+
+.members-ticket-reserve h2,
+.members-ticket-reserved h2 {
+  margin-bottom: 0.75rem;
+}
+
+.members-tickets .site-form {
+  max-width: none;
+}
+
+.members-ticket-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.members-ticket-fieldset legend {
+  margin-bottom: 0.65rem;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text) 68%, transparent);
+}
+
+.members-ticket-gigs,
+.members-reserved-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.members-ticket-gigs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.members-ticket-gigs label {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  font-family: var(--sans);
+  cursor: pointer;
+}
+
+.members-ticket-gigs input {
+  margin-top: 0.3rem;
+}
+
+.members-ticket-date {
+  display: block;
+  margin-top: 0.1rem;
+  color: color-mix(in srgb, var(--text) 72%, transparent);
+  font-size: 0.92rem;
+}
+
+.members-reserved-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  font-family: var(--sans);
+}
+
+.members-ticket-cancel {
+  margin: 1.25rem 0 0;
+  font-family: var(--sans);
+}
+
+.members-ticket-cancel a {
+  color: var(--accent);
+}
+
+.members-ticket-cancel a:hover {
+  color: var(--berry);
+}
+
 /* --- PayPal stub --- */
 .paypal-stub {
   display: flex;
@@ -3833,6 +3921,32 @@ a.location-link:hover,
   color: var(--white);
 }
 
+.admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  text-decoration: none;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+
+.admin-secondary-link:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--text-h);
+}
+
 .admin-back-link,
 .admin-inline-link {
   color: var(--accent);
@@ -4076,6 +4190,120 @@ a.location-link:hover,
 .admin-member-table td:last-child,
 .admin-member-table th:last-child {
   text-align: right;
+}
+
+.admin-reservation-list {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.admin-reservation-item {
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  background: color-mix(in srgb, var(--white) 78%, transparent);
+}
+
+.admin-reservation-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-reservation-mark {
+  flex: 0 0 auto;
+  width: 1.65rem;
+  height: 1.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+  border-radius: 2px;
+  font-family: var(--sans);
+  font-size: 1.15rem;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: var(--text-h);
+}
+
+.admin-reservation-toggle:hover {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.admin-reservation-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: left;
+  margin-left: 1rem;
+}
+
+.admin-reservation-name {
+  font-family: var(--heading);
+  font-weight: var(--weight-bold);
+  color: var(--text-h);
+}
+
+.admin-reservation-date,
+.admin-reservation-count,
+.admin-reservation-empty,
+.admin-reservation-people {
+  font-family: var(--sans);
+}
+
+.admin-reservation-date {
+  color: color-mix(in srgb, var(--text) 72%, transparent);
+  font-size: 0.92rem;
+}
+
+.admin-reservation-count {
+  margin-left: auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-reservation-empty {
+  margin: 0;
+  padding: 0 1rem 0.9rem;
+}
+
+.admin-reservation-people {
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem 0.85rem;
+}
+
+.admin-reservation-people li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  padding: 0.4rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.admin-reservation-person {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.admin-reservation-people a {
+  color: var(--accent);
 }
 
 .admin-banner-saved {
@@ -4483,27 +4711,6 @@ a.location-link:hover,
 }
 
 /* --- Admin gigs --- */
-.admin-gig-past-banner {
-  margin: 0 0 1rem;
-  padding: 0.7rem 0.9rem;
-  font-family: var(--sans);
-  font-size: 0.95rem;
-  color: color-mix(in srgb, var(--berry) 88%, var(--text));
-  background: var(--berry-wash);
-  border: 1px solid color-mix(in srgb, var(--berry) 32%, transparent);
-}
-
-.admin-gig-row--past {
-  border-color: color-mix(in srgb, var(--berry) 35%, transparent);
-  background: color-mix(in srgb, var(--berry-wash) 55%, var(--white));
-}
-
-.admin-post-status.is-past {
-  color: color-mix(in srgb, var(--berry) 90%, var(--text));
-  background: var(--berry-wash);
-  border-color: color-mix(in srgb, var(--berry) 35%, transparent);
-}
-
 .admin-gig-defaults {
   margin: 0;
   padding: 1rem 1.05rem 1.1rem;
@@ -4597,6 +4804,36 @@ a.location-link:hover,
   margin: 1.5rem 0;
   font-family: var(--sans);
   color: color-mix(in srgb, var(--text) 72%, transparent);
+}
+
+.flyer-archive {
+  width: min(100%, 640px);
+  margin: 1.75rem auto 0;
+  text-align: center;
+}
+
+.flyer-archive-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-size: 1rem;
+  text-decoration: none;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--ink);
+  background: var(--thistle);
+  color: var(--white);
+  transition: background var(--transition-time) ease-in-out;
+}
+
+.flyer-archive-link:hover {
+  background: color-mix(in srgb, var(--thistle) 80%, var(--ink));
+  color: var(--white);
+}
+
+.flyer-archive-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 

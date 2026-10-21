@@ -16,6 +16,7 @@ import {
 import { databaseIsConfigured, getDatabaseClient } from './database.ts'
 import { asIsoDate, asIsoTimestamp } from './memberTypes.ts'
 import { localDataDir, shouldUseLocalStore } from './localDataDir.ts'
+import { reservationStore } from './reservationStore.ts'
 
 const GIGS_BLOB_STORE = 'gigs'
 const GIGS_LIST_KEY = 'list'
@@ -434,6 +435,7 @@ export const gigStore = {
       updatedAt: new Date().toISOString(),
     }
     await persistAdminGigs(next, () => deleteGigRow(id))
+    await reservationStore.removeByGig(id)
     const key = imageKeyFromPath(gig.imagepath)
     if (key) await this.deleteImage(key)
   },

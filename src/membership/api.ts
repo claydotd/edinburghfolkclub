@@ -1,4 +1,9 @@
-import type { Member, MemberInput } from './types'
+import type {
+  AdminGigReservations,
+  Member,
+  MemberInput,
+  MemberReservations,
+} from './types'
 
 const MEMBERS_URL = '/.netlify/functions/members'
 const ADMIN_URL = '/.netlify/functions/members-admin'
@@ -75,4 +80,48 @@ export async function adminDeleteMember(id: string): Promise<void> {
     credentials: 'include',
   })
   await parseJson(res)
+}
+
+export async function fetchMemberReservations(): Promise<MemberReservations> {
+  const res = await fetch(`${MEMBERS_URL}?action=reservations`, {
+    credentials: 'include',
+  })
+  return parseJson<MemberReservations>(res)
+}
+
+export async function reserveMemberGigs(
+  gigIds: string[],
+): Promise<MemberReservations> {
+  const res = await fetch(`${MEMBERS_URL}?action=reservations`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ gigIds }),
+  })
+  return parseJson<MemberReservations>(res)
+}
+
+export async function adminListReservations(): Promise<AdminGigReservations[]> {
+  const res = await fetch(`${ADMIN_URL}?action=reservations`, {
+    credentials: 'include',
+  })
+  const data = await parseJson<{ gigs: AdminGigReservations[] }>(res)
+  return data.gigs
+}
+
+export async function adminRemoveReservation(
+  gigId: string,
+  memberId: string,
+): Promise<AdminGigReservations[]> {
+  const params = new URLSearchParams({
+    action: 'reservations',
+    gigId,
+    memberId,
+  })
+  const res = await fetch(`${ADMIN_URL}?${params}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  const data = await parseJson<{ gigs: AdminGigReservations[] }>(res)
+  return data.gigs
 }
