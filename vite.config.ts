@@ -5,6 +5,8 @@ import babel from '@rolldown/plugin-babel'
 import { defineConfig } from 'vite'
 import { galleryIndexPlugin } from './plugins/galleryIndex.ts'
 import { newsApiDevPlugin } from './plugins/newsApiDev.ts'
+import { sitemapPlugin } from './plugins/sitemap.ts'
+import { spa404Plugin } from './plugins/spa404.ts'
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -14,7 +16,9 @@ export default defineConfig({
   base: process.env.VITE_BASE || '/',
   plugins: [
     galleryIndexPlugin(rootDir),
+    sitemapPlugin(),
     newsApiDevPlugin(),
+    spa404Plugin(),
     react(),
     babel({ presets: [reactCompilerPreset()] }),
   ],

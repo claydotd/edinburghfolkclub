@@ -32,6 +32,8 @@ jobs:
           VITE_BASE: /${{ github.event.repository.name }}/
           # Static news/admin stub (no Netlify Functions on Pages)
           VITE_NEWS_DEMO: '1'
+          # Origin only. VITE_BASE adds the project path to sitemap URLs.
+          SITE_URL: https://${{ github.repository_owner }}.github.io
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

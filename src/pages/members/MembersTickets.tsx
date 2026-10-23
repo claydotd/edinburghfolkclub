@@ -5,12 +5,15 @@ import {
   reserveMemberGigs,
 } from '../../membership/api'
 import type { MemberReservations } from '../../membership/types'
+import { useMembership } from '../../membership/useMembership'
 import { isNewsDemo } from '../../news/api'
 
-const CANCEL_MAILTO = 'mailto:members@efc1973.com'
+const MEMBERS_EMAIL = 'members@efc1973.com'
+const MEMBERS_MAILTO = `mailto:${MEMBERS_EMAIL}`
 
 export default function MembersTickets() {
   const demo = isNewsDemo()
+  const { current } = useMembership()
   const [reservations, setReservations] = useState<MemberReservations | null>(null)
   const [selected, setSelected] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -45,6 +48,10 @@ export default function MembersTickets() {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!current) {
+      setError(`Your membership is not current. Email ${MEMBERS_EMAIL} before reserving tickets.`)
+      return
+    }
     if (selected.length === 0) {
       setError('Choose a gig to reserve')
       return
@@ -87,7 +94,7 @@ export default function MembersTickets() {
           Reserve members’-price tickets for an upcoming night.
         </p>
         <p className="members-ticket-cancel">
-          <em>Can't go to a gig you reserved? email <a href={CANCEL_MAILTO}>members@efc1973.com</a> to cancel.</em>
+          <em>Can't go to a gig you reserved? email <a href={MEMBERS_MAILTO}>{MEMBERS_EMAIL}</a> to cancel.</em>
         </p>
       </header>
 
@@ -103,7 +110,13 @@ export default function MembersTickets() {
         <>
           <section className="members-ticket-reserve" aria-labelledby="reserve-heading">
             <h2 id="reserve-heading">Reserve a ticket</h2>
-            {available.length === 0 ? (
+            {!current ? (
+              <p className="members-ticket-blocked">
+                Your membership is not current. Email{' '}
+                <a href={MEMBERS_MAILTO}>{MEMBERS_EMAIL}</a> before reserving
+                tickets.
+              </p>
+            ) : available.length === 0 ? (
               <p>
                 {reserved.length === 0
                   ? 'No upcoming gigs to reserve.'

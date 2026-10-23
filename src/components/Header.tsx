@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import logo from '../assets/logo.webp'
 
 const MOBILE_NAV_QUERY = '(max-width: 720px)'
 
-const COMPACT_SCROLL_Y = 48
+const COMPACT_ENTER_Y = 120
+const COMPACT_EXIT_Y = 8
+const COMPACT_TRANSITION_MS = 350
 
 export default function Header() {
   const [open, setOpen] = useState(false)
   const [compact, setCompact] = useState(false)
+  const compactRef = useRef(false)
   const location = useLocation()
   const toggleRef = useRef<HTMLButtonElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -28,23 +31,44 @@ export default function Header() {
     return () => media.removeEventListener('change', onChange)
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // Shrinking the sticky header shortens the page, and scroll anchoring
+    // moves scrollY by about that same amount. A single threshold lets that
+    // adjustment collapse and expand the header forever. The gap below is
+    // wider than the shrink, and anchoring is paused during the transition.
+    const root = document.documentElement
     const mobile = window.matchMedia(MOBILE_NAV_QUERY)
+    let anchorTimer = 0
 
-    function updateCompact() {
-      if (mobile.matches) {
-        setCompact(false)
-        return
-      }
-      setCompact(window.scrollY > COMPACT_SCROLL_Y)
+    function syncCompact() {
+      const y = window.scrollY
+      const next = mobile.matches
+        ? false
+        : compactRef.current
+          ? y > COMPACT_EXIT_Y
+          : y > COMPACT_ENTER_Y
+
+      if (next === compactRef.current) return
+
+      root.style.overflowAnchor = 'none'
+      window.clearTimeout(anchorTimer)
+      anchorTimer = window.setTimeout(() => {
+        root.style.overflowAnchor = ''
+      }, COMPACT_TRANSITION_MS)
+      compactRef.current = next
+      setCompact(next)
     }
 
-    updateCompact()
-    window.addEventListener('scroll', updateCompact, { passive: true })
-    mobile.addEventListener('change', updateCompact)
+    syncCompact()
+    window.addEventListener('scroll', syncCompact, { passive: true })
+    window.addEventListener('resize', syncCompact)
+    mobile.addEventListener('change', syncCompact)
     return () => {
-      window.removeEventListener('scroll', updateCompact)
-      mobile.removeEventListener('change', updateCompact)
+      window.removeEventListener('scroll', syncCompact)
+      window.removeEventListener('resize', syncCompact)
+      mobile.removeEventListener('change', syncCompact)
+      window.clearTimeout(anchorTimer)
+      root.style.overflowAnchor = ''
     }
   }, [])
 

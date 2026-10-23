@@ -6,11 +6,22 @@
 [build.environment]
   VITE_NETLIFY_FORMS = "1"
 
-# SPA fallback — Netlify Functions are matched before this rule
+# Known app routes are rewritten to index.html with status 200 by dist/_redirects,
+# written at build time from plugins/spa404.ts. Anything else is served from
+# 404.html (a copy of the app) with HTTP 404.
+
+# Fresh sitemap on each crawl, including news published since the last deploy.
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/sitemap"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/.netlify/functions/robots"
+  status = 200
+  force = true
 
 # Hashed Vite bundles can be cached forever. Image paths are stable, so keep
 # those fresh within a week.

@@ -1,10 +1,11 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Outlet, Route, Routes } from 'react-router-dom'
 import './App.css'
 import Header from './components/Header.tsx'
 import Footer from './components/Footer.tsx'
 import ScrollToTop from './components/ScrollToTop.tsx'
 import Home from './pages/Home.tsx'
+import NotFound from './pages/NotFound.tsx'
 
 const PastGigs = lazy(() => import('./pages/PastGigs.tsx'))
 const About = lazy(() => import('./pages/About.tsx'))
@@ -38,12 +39,12 @@ function RouteFallback() {
   return <p className="flyer-loading">Loading…</p>
 }
 
-function PublicShell() {
+function PublicShell({ children }: { children?: ReactNode }) {
   return (
     <>
       <Header />
       <Suspense fallback={<RouteFallback />}>
-        <Outlet />
+        {children ?? <Outlet />}
       </Suspense>
       <Footer />
     </>
@@ -78,6 +79,14 @@ function App() {
               <Route path=":id" element={<AdminNewsEdit />} />
             </Route>
           </Route>
+          <Route
+            path="*"
+            element={
+              <PublicShell>
+                <NotFound />
+              </PublicShell>
+            }
+          />
         </Route>
 
         <Route element={<PublicShell />}>
@@ -103,7 +112,9 @@ function App() {
                 <Route path="tickets" element={<MembersTickets />} />
               </Route>
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </>

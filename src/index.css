@@ -705,6 +705,29 @@ a {
   color: var(--text);
 }
 
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 3.5rem;
+  padding-bottom: 4rem;
+}
+
+.not-found-code {
+  margin: 0 0 0.35rem;
+  font-family: var(--heading);
+  font-size: clamp(4.5rem, 12vw, 6.5rem);
+  font-weight: var(--weight-bold);
+  line-height: 0.9;
+  color: var(--thistle);
+}
+
+.not-found-actions {
+  margin: 0.25rem 0 0;
+}
+
 .prose {
   font-family: var(--sans);
   line-height: 1.55;
@@ -2725,11 +2748,18 @@ a {
   font-family: var(--sans);
 }
 
-.members-ticket-cancel a {
+.members-ticket-blocked {
+  margin: 0;
+  font-family: var(--sans);
+}
+
+.members-ticket-cancel a,
+.members-ticket-blocked a {
   color: var(--accent);
 }
 
-.members-ticket-cancel a:hover {
+.members-ticket-cancel a:hover,
+.members-ticket-blocked a:hover {
   color: var(--berry);
 }
 
@@ -3155,6 +3185,18 @@ a.location-link:hover,
   margin-top: 1.1rem;
 }
 
+.about-para {
+  margin-bottom: 1.15rem;
+}
+
+.about-para:has(+ :not(.about-para)) {
+  margin-bottom: 2.25rem;
+}
+
+.about-lede-reveal {
+  margin-bottom: 0;
+}
+
 .about-body--highlight {
   padding: 1.35rem 1.5rem;
   background: var(--gold-wash);
@@ -3406,6 +3448,51 @@ a.location-link:hover,
   font-size: 0.95rem;
   margin-top: 0.35rem;
   color: var(--text);
+}
+
+/* --- Portrait beside closing text --- */
+.about-portrait-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  column-gap: 1.5rem;
+  align-items: start;
+  margin-bottom: 2.25rem;
+}
+
+.about-portrait-reveal {
+  margin-bottom: 0;
+}
+
+.about-portrait {
+  margin: 0;
+}
+
+.about-portrait img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.about-portrait-copy .about-para {
+  margin-bottom: 1.15rem;
+}
+
+.about-portrait-copy .about-para:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .about-portrait-split {
+    grid-template-columns: 1fr;
+    row-gap: 1.25rem;
+  }
+
+  .about-portrait {
+    width: min(100%, 16rem);
+  }
 }
 
 /* ==========================================================================

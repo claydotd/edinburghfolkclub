@@ -32,6 +32,9 @@ function isUpcoming(date: string, today = todayIsoDate()): boolean {
   return date >= today
 }
 
+export const MEMBERSHIP_NOT_CURRENT =
+  'Your membership is not current. Email members@efc1973.com before reserving tickets.'
+
 function toGig(gig: { id: string; date: string; name: string }): ReservationGig {
   return { id: gig.id, date: gig.date, name: gig.name }
 }
@@ -60,6 +63,9 @@ export async function createMemberReservations(
   memberId: string,
   gigIds: string[],
 ): Promise<MemberReservations> {
+  const member = await memberStore.getPublishedById(memberId)
+  if (!member?.current) throw new Error(MEMBERSHIP_NOT_CURRENT)
+
   const ids = [...new Set(gigIds.map((id) => id.trim()).filter(Boolean))]
   if (ids.length === 0) throw new Error('Choose a gig to reserve')
 
@@ -118,6 +124,7 @@ export async function adminReservationView(): Promise<AdminGigReservations[]> {
 }
 
 export function reservationErrorStatus(message: string): number {
+  if (message === MEMBERSHIP_NOT_CURRENT) return 403
   if (
     message === 'Choose a gig to reserve' ||
     message === 'That gig is not available to reserve'
