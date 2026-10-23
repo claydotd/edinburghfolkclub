@@ -146,7 +146,7 @@ export default function GigImageField({
               : 'Drop a flyer image here or click to browse'}
         </p>
         <p className="file-drop__browse">
-          Images are resized automatically to stay under 4MB for upload.{' '}
+          Images are resized to about 1200px and kept under 300KB.{' '}
           <span className="file-drop__browse-link">browse</span>
         </p>
       </div>

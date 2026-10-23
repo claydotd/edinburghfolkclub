@@ -130,7 +130,7 @@ export default function About() {
       </Reveal>
 
       <AboutImage
-        src="/about/about5.jpg"
+        src="/about/about5.webp"
         alt="Edinburgh Folk Club gathering"
         quote="The folk music 'Revival' came to prominence in Scotland over 40 years ago… By 2003 we preferred to speak of 'The Carrying Stream'."
         quotePlacement="bottom"
@@ -215,7 +215,7 @@ export default function About() {
       </Reveal>
 
       <AboutImage
-        src="/about/about6.jpg"
+        src="/about/about6.webp"
         alt="On the mic at the Edinburgh Folk Club"
         quote="So, in September 1973, Edinburgh Folk Club opened up in the basement of the Chaplaincy Centre in George Square."
         quotePlacement="bottom"

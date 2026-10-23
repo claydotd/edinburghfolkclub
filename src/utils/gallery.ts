@@ -6,6 +6,12 @@ export type GalleryPhotoArtist = {
   name: string
 }
 
+export type GallerySizedImage = {
+  src: string
+  width: number
+  height: number
+}
+
 export type GalleryPhoto = {
   src: string
   year: string
@@ -15,6 +21,8 @@ export type GalleryPhoto = {
   filename: string
   width: number
   height: number
+  /** Smallest first. `src` is the largest, used by the lightbox. */
+  srcSet?: GallerySizedImage[]
 }
 
 export type GalleryArtist = {
@@ -33,6 +41,8 @@ export type GalleryAlbumPhoto = Photo & {
   artists: GalleryPhotoArtist[]
   artistLabel: string
   year: string
+  /** Full-size derivative. The album `src` stays on the smaller grid file. */
+  fullSrc: string
 }
 
 export const gallery = galleryIndex as GalleryIndex
@@ -45,16 +55,33 @@ export function toAlbumPhotos(
   photos: GalleryPhoto[],
   resolveSrc: (src: string) => string,
 ): GalleryAlbumPhoto[] {
-  return photos.map((photo) => ({
-    src: resolveSrc(photo.src),
-    width: photo.width,
-    height: photo.height,
-    alt: `${photo.artistLabel}, ${photo.year}`,
-    key: photo.src,
-    artists: photo.artists,
-    artistLabel: photo.artistLabel,
-    year: photo.year,
-  }))
+  return photos.map((photo) => {
+    const sources = photo.srcSet?.length
+      ? photo.srcSet
+      : [{ src: photo.src, width: photo.width, height: photo.height }]
+    const full = sources[sources.length - 1]!
+    // Leave the lightbox file out of srcSet. On a 2× screen the browser would
+    // otherwise skip the grid size and download the large file for every thumbnail.
+    const gridSources = sources.length > 1 ? sources.slice(0, -1) : sources
+    const grid = gridSources[0]!
+
+    return {
+      src: resolveSrc(grid.src),
+      width: full.width,
+      height: full.height,
+      srcSet: gridSources.map((image) => ({
+        src: resolveSrc(image.src),
+        width: image.width,
+        height: image.height,
+      })),
+      fullSrc: resolveSrc(full.src),
+      alt: `${photo.artistLabel}, ${photo.year}`,
+      key: photo.src,
+      artists: photo.artists,
+      artistLabel: photo.artistLabel,
+      year: photo.year,
+    }
+  })
 }
 
 export function photosByYear(photos: GalleryPhoto[]) {

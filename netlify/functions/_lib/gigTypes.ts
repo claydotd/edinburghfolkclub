@@ -116,6 +116,20 @@ export function coerceGigsState(value: unknown): GigsState {
   }
 }
 
+/** Static flyers that were recompressed to WebP. Keeps already-saved gigs working. */
+const REPLACED_GIG_IMAGES: Record<string, string> = {
+  '/gig-pics/reid-kydd.jpg': '/gig-pics/reid-kydd.webp',
+  '/gig-pics/pete-morton.jpg': '/gig-pics/pete-morton.webp',
+  '/gig-pics/machray.jpg': '/gig-pics/machray.webp',
+  '/gig-pics/judy-and-sally-folk-duo.jpg': '/gig-pics/judy-and-sally-folk-duo.webp',
+  '/gig-pics/Curmudgeon.jpg': '/gig-pics/Curmudgeon.webp',
+  '/gig-pics/burns.jpg': '/gig-pics/burns.webp',
+}
+
+export function currentGigImagePath(imagepath: string): string {
+  return REPLACED_GIG_IMAGES[imagepath] ?? imagepath
+}
+
 function coerceGig(raw: Record<string, unknown>, index: number): Gig {
   const date =
     typeof raw.date === 'string' && DATE_RE.test(raw.date)
@@ -138,7 +152,8 @@ function coerceGig(raw: Record<string, unknown>, index: number): Gig {
     ticketsAvailable:
       typeof raw.ticketsAvailable === 'boolean' ? raw.ticketsAvailable : true,
     website: typeof raw.website === 'string' ? raw.website : '',
-    imagepath: typeof raw.imagepath === 'string' ? raw.imagepath : '',
+    imagepath:
+      typeof raw.imagepath === 'string' ? currentGigImagePath(raw.imagepath) : '',
     bodyMarkdown: typeof raw.bodyMarkdown === 'string' ? raw.bodyMarkdown : '',
     venue: typeof raw.venue === 'string' ? raw.venue : '',
     doors: typeof raw.doors === 'string' ? raw.doors : '',
@@ -164,7 +179,8 @@ export function localDateString(d = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
-export const GIG_IMAGE_MAX_BYTES = 4 * 1024 * 1024
+/** Well under 300KB so a season of flyers stays light. */
+export const GIG_IMAGE_MAX_BYTES = 280 * 1024
 
 export function publicGigImagePath(key: string): string {
   return `/.netlify/functions/gigs?resource=image&key=${encodeURIComponent(key)}`

@@ -1,4 +1,8 @@
-import { GIG_IMAGE_MAX_BYTES, formatBytes } from '../gigs/types'
+import {
+  GIG_IMAGE_MAX_BYTES,
+  GIG_IMAGE_MAX_EDGE,
+  formatBytes,
+} from '../gigs/types'
 
 /** Fit inside a news column: sharp on screen, not a full-resolution original. */
 export const NEWS_IMAGE_MAX_WIDTH = 1200
@@ -140,8 +144,8 @@ function readyResult(
   const message = note
     ? note
     : shrunk
-      ? `Original ${formatBytes(file.size)} → compressed ${formatBytes(candidate.blob.size)} (under 4MB).`
-      : `Original ${formatBytes(file.size)} kept at ${formatBytes(candidate.blob.size)} (already under 4MB).`
+      ? `Original ${formatBytes(file.size)} → compressed ${formatBytes(candidate.blob.size)}.`
+      : `Kept at ${formatBytes(candidate.blob.size)}.`
 
   return {
     status: 'ready',
@@ -156,7 +160,7 @@ function readyResult(
 }
 
 /**
- * Resize/compress an image until it is under the Netlify upload limit (default 4MB).
+ * Resize a flyer so its longest edge is about 1200px and it stays under ~280KB.
  * Prefer keeping the original when it already fits; never return a larger re-encode
  * when the original is already under the limit. Output is JPEG (or WebP if smaller).
  */
@@ -193,9 +197,11 @@ export async function compressImageForUpload(
   }
 
   const allowWebp = supportsWebpEncoding()
-  const originalFits = file.size <= maxBytes
+  const withinEdge =
+    img.width <= GIG_IMAGE_MAX_EDGE && img.height <= GIG_IMAGE_MAX_EDGE
+  const originalFits = withinEdge && file.size <= maxBytes
 
-  // Already under the upload limit: keep as-is (no enlargement from re-encoding)
+  // Already small enough to show: keep as-is (no enlargement from re-encoding)
   if (originalFits) {
     const ready = readyResult(
       file,
@@ -211,7 +217,7 @@ export async function compressImageForUpload(
     message: `Compressing image (original ${formatBytes(file.size)})…`,
   })
 
-  const edgeSteps = [2000, 1600, 1280, 1024, 800, 640]
+  const edgeSteps = [GIG_IMAGE_MAX_EDGE, 1024, 800, 640]
   const qualitySteps = [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]
 
   let best: EncodedCandidate | null = null
@@ -242,7 +248,7 @@ export async function compressImageForUpload(
   const error = {
     status: 'error' as const,
     message: best
-      ? `Could not compress below 4MB (smallest was ${formatBytes(best.blob.size)}). Try a simpler image.`
+      ? `Could not compress below ${formatBytes(maxBytes)} (smallest was ${formatBytes(best.blob.size)}). Try a simpler image.`
       : 'Image compression failed.',
   }
   report(error)
@@ -336,7 +342,7 @@ export async function compressNewsImage(
     maxHeight = Math.round(maxHeight * 0.75)
   }
 
-  if (best && best.blob.size <= GIG_IMAGE_MAX_BYTES) {
+  if (best && best.blob.size <= 4 * 1024 * 1024) {
     const ready = readyResult(
       file,
       best,

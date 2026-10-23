@@ -14,6 +14,7 @@ dist-ssr
 .data
 .env
 .netlify
+.cache
 
 
 # Editor directories and files

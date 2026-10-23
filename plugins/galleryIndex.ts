@@ -1,7 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { imageSizeFromFile } from 'image-size/fromFile'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import sharp from 'sharp'
 import type { Plugin } from 'vite'
+
+/** Grid thumbnail: enough for a ~280px-tall row at 2×. */
+const GRID_WIDTH = 800
+/** Lightbox size: sharp on a laptop, far smaller than the camera original. */
+const FULL_WIDTH = 1600
 
 const IMAGE_EXT = new Set([
   '.jpg',
@@ -17,6 +23,12 @@ export type GalleryPhotoArtist = {
   name: string
 }
 
+export type GallerySizedImage = {
+  src: string
+  width: number
+  height: number
+}
+
 export type GalleryPhoto = {
   src: string
   year: string
@@ -28,6 +40,8 @@ export type GalleryPhoto = {
   filename: string
   width: number
   height: number
+  /** Smallest first. `src` matches the largest entry. */
+  srcSet: GallerySizedImage[]
 }
 
 export type GalleryArtist = {
@@ -81,8 +95,84 @@ function compareYearsDesc(a: string, b: string) {
   return b.localeCompare(a, undefined, { numeric: true })
 }
 
+function webpName(filename: string) {
+  return filename.replace(/\.[^.]+$/, '.webp')
+}
+
+function derivativeUrl(
+  width: number,
+  year: string,
+  folderSlug: string,
+  filename: string,
+) {
+  return `/gallery-opt/${width}/${year}/${folderSlug}/${webpName(filename)}`
+}
+
+async function renderDerivative(
+  sourcePath: string,
+  destPath: string,
+  maxEdge: number,
+): Promise<{ width: number; height: number }> {
+  const sourceMtime = fs.statSync(sourcePath).mtimeMs
+  if (fs.existsSync(destPath) && fs.statSync(destPath).mtimeMs >= sourceMtime) {
+    const cached = await sharp(destPath).metadata()
+    if (cached.width && cached.height) {
+      return { width: cached.width, height: cached.height }
+    }
+  }
+
+  fs.mkdirSync(path.dirname(destPath), { recursive: true })
+  const info = await sharp(sourcePath)
+    .rotate()
+    .resize({
+      width: maxEdge,
+      height: maxEdge,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 76 })
+    .toFile(destPath)
+
+  return {
+    width: info.width ?? maxEdge,
+    height: info.height ?? maxEdge,
+  }
+}
+
+function stripBase(urlPath: string, base: string) {
+  if (!base || base === '/') return urlPath
+  const prefix = base.endsWith('/') ? base.slice(0, -1) : base
+  if (urlPath === prefix) return '/'
+  if (urlPath.startsWith(`${prefix}/`)) return urlPath.slice(prefix.length)
+  return urlPath
+}
+
+function cacheFileForUrl(pathname: string, cacheDir: string) {
+  if (!pathname.startsWith('/gallery-opt/') || pathname.includes('..')) return null
+  const file = path.resolve(cacheDir, pathname.slice(1))
+  const root = path.resolve(cacheDir)
+  if (file !== root && !file.startsWith(`${root}${path.sep}`)) return null
+  return file
+}
+
+function serveCachedDerivative(
+  req: IncomingMessage,
+  res: ServerResponse,
+  base: string,
+  cacheDir: string,
+) {
+  const pathname = stripBase(req.url?.split('?')[0] ?? '', base)
+  const file = cacheFileForUrl(pathname, cacheDir)
+  if (!file || !fs.existsSync(file)) return false
+  res.setHeader('Content-Type', 'image/webp')
+  res.setHeader('Cache-Control', 'public, max-age=604800')
+  fs.createReadStream(file).pipe(res)
+  return true
+}
+
 export async function buildGalleryIndex(
   galleryRoot: string,
+  cacheDir: string,
 ): Promise<GalleryIndex> {
   const photos: GalleryPhoto[] = []
 
@@ -120,28 +210,35 @@ export async function buildGalleryIndex(
 
       for (const filename of files) {
         const filePath = path.join(folderPath, filename)
-        let width = 1600
-        let height = 1200
+        const fullUrl = derivativeUrl(FULL_WIDTH, year, folderSlug, filename)
+        const full = await renderDerivative(
+          filePath,
+          path.join(cacheDir, fullUrl.slice(1)),
+          FULL_WIDTH,
+        )
 
-        try {
-          const size = await imageSizeFromFile(filePath)
-          if (size.width && size.height) {
-            width = size.width
-            height = size.height
-          }
-        } catch {
-          // Keep fallback dimensions if probing fails.
+        const srcSet: GallerySizedImage[] = []
+        if (full.width > GRID_WIDTH || full.height > GRID_WIDTH) {
+          const gridUrl = derivativeUrl(GRID_WIDTH, year, folderSlug, filename)
+          const grid = await renderDerivative(
+            filePath,
+            path.join(cacheDir, gridUrl.slice(1)),
+            GRID_WIDTH,
+          )
+          srcSet.push({ src: gridUrl, width: grid.width, height: grid.height })
         }
+        srcSet.push({ src: fullUrl, width: full.width, height: full.height })
 
         photos.push({
-          src: `/gallery/${year}/${folderSlug}/${filename}`,
+          src: fullUrl,
           year,
           folderSlug,
           artists,
           artistLabel,
           filename,
-          width,
-          height,
+          width: full.width,
+          height: full.height,
+          srcSet,
         })
       }
     }
@@ -188,9 +285,10 @@ export async function buildGalleryIndex(
 export function galleryIndexPlugin(rootDir: string): Plugin {
   const galleryRoot = path.join(rootDir, 'public/gallery')
   const outFile = path.join(rootDir, 'content/gallery-index.json')
+  const cacheDir = path.join(rootDir, '.cache')
 
   async function writeIndex() {
-    const index = await buildGalleryIndex(galleryRoot)
+    const index = await buildGalleryIndex(galleryRoot, cacheDir)
     fs.mkdirSync(path.dirname(outFile), { recursive: true })
     fs.writeFileSync(outFile, `${JSON.stringify(index, null, 2)}\n`)
   }
@@ -201,7 +299,15 @@ export function galleryIndexPlugin(rootDir: string): Plugin {
       await writeIndex()
     },
     configureServer(server) {
-      void writeIndex()
+      server.middlewares.use((req, res, next) => {
+        try {
+          if (serveCachedDerivative(req, res, server.config.base, cacheDir)) return
+        } catch (err) {
+          next(err)
+          return
+        }
+        next()
+      })
       server.watcher.add(galleryRoot)
 
       const refresh = (file: string) => {
@@ -215,6 +321,13 @@ export function galleryIndexPlugin(rootDir: string): Plugin {
       server.watcher.on('unlink', refresh)
       server.watcher.on('addDir', refresh)
       server.watcher.on('unlinkDir', refresh)
+    },
+    writeBundle(output) {
+      const outDir = output.dir
+      if (!outDir) return
+      const optimized = path.join(cacheDir, 'gallery-opt')
+      if (!fs.existsSync(optimized)) return
+      fs.cpSync(optimized, path.join(outDir, 'gallery-opt'), { recursive: true })
     },
   }
 }

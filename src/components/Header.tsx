@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import logo from '../assets/logo.png'
+import logo from '../assets/logo.webp'
 
 const MOBILE_NAV_QUERY = '(max-width: 720px)'
 
@@ -146,7 +146,13 @@ export default function Header() {
             The home of traditional music in the capital since 1973
           </p>
           <Link to="/" className="logo-link" onClick={closeFromLink}>
-            <img src={logo} alt="Edinburgh Folk Club" className="logo" />
+            <img
+              src={logo}
+              alt="Edinburgh Folk Club"
+              className="logo"
+              width={500}
+              height={233}
+            />
           </Link>
           <p className="header-tagline header-tagline--right">
             Meetings at UCC <br />

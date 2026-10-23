@@ -42,7 +42,10 @@ export type GigsState = {
   updatedAt: string
 }
 
-export const GIG_IMAGE_MAX_BYTES = 4 * 1024 * 1024
+/** Longest edge for a flyer image. The homepage crops these to a small square. */
+export const GIG_IMAGE_MAX_EDGE = 1200
+/** Well under 300KB so a season of flyers stays light. */
+export const GIG_IMAGE_MAX_BYTES = 280 * 1024
 
 export function localDateString(d = new Date()): string {
   const y = d.getFullYear()

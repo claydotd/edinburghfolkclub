@@ -1,6 +1,6 @@
 import seedJson from '../../gigs/gigs.json'
 import type { Gig, GigInput, GigsState } from './types'
-import { GIG_IMAGE_MAX_BYTES } from './types'
+import { GIG_IMAGE_MAX_BYTES, formatBytes } from './types'
 
 const DATA_KEY = 'efc-gigs-demo-v1'
 const AUTH_KEY = 'efc-news-demo-auth'
@@ -183,7 +183,7 @@ export async function uploadGigImage(input: {
     : input.dataBase64
   const binary = atob(raw)
   if (binary.length > GIG_IMAGE_MAX_BYTES) {
-    throw new Error('Image must be under 4MB')
+    throw new Error(`Image must be under ${formatBytes(GIG_IMAGE_MAX_BYTES)}`)
   }
   const contentType = (input.contentType ?? 'image/jpeg').split(';')[0]
   const dataUrl = `data:${contentType};base64,${raw}`

@@ -58,7 +58,7 @@ export default function GalleryLightbox({ photo, onClose }: GalleryLightboxProps
         <figure className="gallery-lightbox__figure">
           <img
             className="gallery-lightbox__image"
-            src={photo.src}
+            src={photo.fullSrc}
             alt={photo.alt ?? caption}
             width={photo.width}
             height={photo.height}

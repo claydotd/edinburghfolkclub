@@ -7,6 +7,7 @@ import type { Gig, GigImageUpload, GigInput, GigsState } from './gigTypes.ts'
 import {
   GIG_IMAGE_MAX_BYTES,
   coerceGigsState,
+  currentGigImagePath,
   emptyGigsState,
   normalizeGig,
   parseGigImageKey,
@@ -139,7 +140,7 @@ function rowToGig(row: DbGigRow): Gig {
     tickets: row.tickets,
     ticketsAvailable: Boolean(row.tickets_available),
     website: row.website,
-    imagepath: row.imagepath,
+    imagepath: currentGigImagePath(row.imagepath),
     bodyMarkdown: row.body_markdown,
     venue: row.venue,
     doors: row.doors,
@@ -305,7 +306,7 @@ function decodeImageUpload(upload: GigImageUpload): {
   const buffer = Buffer.from(raw, 'base64')
   if (!buffer.length) throw new Error('Image data is empty')
   if (buffer.length > GIG_IMAGE_MAX_BYTES) {
-    throw new Error('Image must be under 4MB')
+    throw new Error('Image must be under 280KB')
   }
   const key = `${randomUUID()}.${extensionForContentType(contentType)}`
   return { buffer, contentType, key }

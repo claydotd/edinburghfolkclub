@@ -110,7 +110,9 @@ export default function FlyerGigList({
                     className="flyer-image"
                     src={publicUrl(imagePath)}
                     alt=""
-                    loading="lazy"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={index === 0 ? 'high' : undefined}
+                    decoding="async"
                   />
                 )}
               </div>

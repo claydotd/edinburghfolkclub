@@ -1,40 +1,50 @@
+import { lazy, Suspense } from 'react'
 import { Outlet, Route, Routes } from 'react-router-dom'
 import './App.css'
 import Header from './components/Header.tsx'
 import Footer from './components/Footer.tsx'
 import ScrollToTop from './components/ScrollToTop.tsx'
 import Home from './pages/Home.tsx'
-import PastGigs from './pages/PastGigs.tsx'
-import About from './pages/About.tsx'
-import Contact from './pages/Contact.tsx'
-import Gallery from './pages/Gallery.tsx'
-import News from './pages/News.tsx'
-import NewsPost from './pages/NewsPost.tsx'
-import Terms from './pages/Terms.tsx'
-import MembersGate from './pages/members/MembersGate.tsx'
-import MembersLayout from './pages/members/MembersLayout.tsx'
-import MembersAccount from './pages/members/MembersAccount.tsx'
-import MembersDocuments from './pages/members/MembersDocuments.tsx'
-import MembersDocumentDetail from './pages/members/MembersDocumentDetail.tsx'
-import MembersTickets from './pages/members/MembersTickets.tsx'
-import RequireMember from './membership/RequireMember.tsx'
-import PlayEFC from './pages/PlayEFC.tsx'
-import AdminNewsGate from './pages/admin/AdminNewsGate.tsx'
-import AdminNewsLayout from './pages/admin/AdminNewsLayout.tsx'
-import AdminNewsList from './pages/admin/AdminNewsList.tsx'
-import AdminNewsEdit from './pages/admin/AdminNewsEdit.tsx'
-import AdminHomeBanner from './pages/admin/AdminHomeBanner.tsx'
-import AdminGigsList from './pages/admin/AdminGigsList.tsx'
-import AdminGigEdit from './pages/admin/AdminGigEdit.tsx'
-import AdminMembers from './pages/admin/AdminMembers.tsx'
-import AdminReservations from './pages/admin/AdminReservations.tsx'
-import RequireAdmin from './news/RequireAdmin.tsx'
+
+const PastGigs = lazy(() => import('./pages/PastGigs.tsx'))
+const About = lazy(() => import('./pages/About.tsx'))
+const Contact = lazy(() => import('./pages/Contact.tsx'))
+const Gallery = lazy(() => import('./pages/Gallery.tsx'))
+const News = lazy(() => import('./pages/News.tsx'))
+const NewsPost = lazy(() => import('./pages/NewsPost.tsx'))
+const Terms = lazy(() => import('./pages/Terms.tsx'))
+const MembersGate = lazy(() => import('./pages/members/MembersGate.tsx'))
+const MembersLayout = lazy(() => import('./pages/members/MembersLayout.tsx'))
+const MembersAccount = lazy(() => import('./pages/members/MembersAccount.tsx'))
+const MembersDocuments = lazy(() => import('./pages/members/MembersDocuments.tsx'))
+const MembersDocumentDetail = lazy(
+  () => import('./pages/members/MembersDocumentDetail.tsx'),
+)
+const MembersTickets = lazy(() => import('./pages/members/MembersTickets.tsx'))
+const RequireMember = lazy(() => import('./membership/RequireMember.tsx'))
+const PlayEFC = lazy(() => import('./pages/PlayEFC.tsx'))
+const AdminNewsGate = lazy(() => import('./pages/admin/AdminNewsGate.tsx'))
+const AdminNewsLayout = lazy(() => import('./pages/admin/AdminNewsLayout.tsx'))
+const AdminNewsList = lazy(() => import('./pages/admin/AdminNewsList.tsx'))
+const AdminNewsEdit = lazy(() => import('./pages/admin/AdminNewsEdit.tsx'))
+const AdminHomeBanner = lazy(() => import('./pages/admin/AdminHomeBanner.tsx'))
+const AdminGigsList = lazy(() => import('./pages/admin/AdminGigsList.tsx'))
+const AdminGigEdit = lazy(() => import('./pages/admin/AdminGigEdit.tsx'))
+const AdminMembers = lazy(() => import('./pages/admin/AdminMembers.tsx'))
+const AdminReservations = lazy(() => import('./pages/admin/AdminReservations.tsx'))
+const RequireAdmin = lazy(() => import('./news/RequireAdmin.tsx'))
+
+function RouteFallback() {
+  return <p className="flyer-loading">Loading…</p>
+}
 
 function PublicShell() {
   return (
     <>
       <Header />
-      <Outlet />
+      <Suspense fallback={<RouteFallback />}>
+        <Outlet />
+      </Suspense>
       <Footer />
     </>
   )
@@ -45,7 +55,14 @@ function App() {
     <>
       <ScrollToTop />
       <Routes>
-        <Route path="/admin">
+        <Route
+          path="/admin"
+          element={
+            <Suspense fallback={<RouteFallback />}>
+              <Outlet />
+            </Suspense>
+          }
+        >
           <Route index element={<AdminNewsGate />} />
           <Route element={<RequireAdmin />}>
             <Route element={<AdminNewsLayout />}>
