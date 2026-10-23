@@ -760,6 +760,17 @@ a {
   background: color-mix(in srgb, var(--gold) 28%, var(--white));
 }
 
+/* Article photos stay within the news column, whether on the public page or in the editor. */
+.news-article .markdown-body img,
+.news-edit-form .markdown-editor-visual img {
+  display: block;
+  width: auto;
+  max-width: min(100%, 40rem);
+  max-height: 26rem;
+  height: auto;
+  margin: 0.85rem auto 1.15rem;
+}
+
 .md-red {
   color: var(--md-red);
 }
@@ -4798,6 +4809,37 @@ a.location-link:hover,
   color: color-mix(in srgb, var(--berry) 90%, var(--text));
   background: var(--berry-wash);
   border-color: color-mix(in srgb, var(--berry) 32%, transparent);
+}
+
+.news-image-field {
+  gap: 0.65rem;
+}
+
+.news-image-label {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-h);
+  margin-bottom: 0.35rem;
+}
+
+.news-image-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.news-image-preview {
+  display: block;
+  width: auto;
+  max-width: 10rem;
+  max-height: 8rem;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  background: color-mix(in srgb, var(--ink) 4%, var(--white));
 }
 
 .flyer-loading {

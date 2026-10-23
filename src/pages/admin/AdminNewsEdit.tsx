@@ -1,6 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import MarkdownEditor from '../../components/MarkdownEditor'
+import NewsImageField from '../../components/NewsImageField'
+
+function appendImageMarkdown(body: string, markdown: string): string {
+  const trimmed = body.replace(/\s+$/, '')
+  if (!trimmed) return `${markdown}\n`
+  return `${trimmed}\n\n${markdown}\n`
+}
 import {
   adminCreatePost,
   adminGetPost,
@@ -127,7 +134,7 @@ export default function AdminNewsEdit() {
         </div>
       </header>
 
-      <form className="site-form site-form--wide admin-edit-form" onSubmit={onSubmit}>
+      <form className="site-form site-form--wide admin-edit-form news-edit-form" onSubmit={onSubmit}>
         <div className="admin-edit-grid">
           <label className="form-field">
             <span>Title</span>
@@ -188,6 +195,12 @@ export default function AdminNewsEdit() {
         </label>
 
         <MarkdownEditor value={bodyMarkdown} onChange={setBodyMarkdown} />
+
+        <NewsImageField
+          onInsert={(markdown) => {
+            setBodyMarkdown((body) => appendImageMarkdown(body, markdown))
+          }}
+        />
 
         {error ? (
           <p className="news-error" role="alert">

@@ -1,5 +1,10 @@
 import { GIG_IMAGE_MAX_BYTES, formatBytes } from '../gigs/types'
 
+/** Fit inside a news column: sharp on screen, not a full-resolution original. */
+export const NEWS_IMAGE_MAX_WIDTH = 1200
+export const NEWS_IMAGE_MAX_HEIGHT = 800
+export const NEWS_IMAGE_MAX_BYTES = 450 * 1024
+
 export type CompressProgress =
   | { status: 'loading'; message: string }
   | { status: 'resizing'; message: string }
@@ -62,11 +67,12 @@ function supportsWebpEncoding(): boolean {
   }
 }
 
-function drawScaled(
+function drawFit(
   img: HTMLImageElement,
-  maxEdge: number,
+  maxWidth: number,
+  maxHeight: number,
 ): HTMLCanvasElement {
-  const scale = Math.min(1, maxEdge / Math.max(img.width, img.height))
+  const scale = Math.min(1, maxWidth / img.width, maxHeight / img.height)
   const width = Math.max(1, Math.round(img.width * scale))
   const height = Math.max(1, Math.round(img.height * scale))
   const canvas = document.createElement('canvas')
@@ -79,6 +85,13 @@ function drawScaled(
   ctx.fillRect(0, 0, width, height)
   ctx.drawImage(img, 0, 0, width, height)
   return canvas
+}
+
+function drawScaled(
+  img: HTMLImageElement,
+  maxEdge: number,
+): HTMLCanvasElement {
+  return drawFit(img, maxEdge, maxEdge)
 }
 
 function outputFilename(originalName: string, contentType: string): string {
@@ -230,6 +243,113 @@ export async function compressImageForUpload(
     status: 'error' as const,
     message: best
       ? `Could not compress below 4MB (smallest was ${formatBytes(best.blob.size)}). Try a simpler image.`
+      : 'Image compression failed.',
+  }
+  report(error)
+  return error
+}
+
+/**
+ * Resize a photo so it fits a news article: at most 1200×800, and under ~450KB.
+ * Images that already fit are kept as-is.
+ */
+export async function compressNewsImage(
+  file: File,
+  options: Pick<CompressOptions, 'onProgress'> = {},
+): Promise<CompressProgress & { status: 'ready' | 'error' }> {
+  const report = (progress: CompressProgress) => {
+    options.onProgress?.(progress)
+  }
+
+  if (!file.type.startsWith('image/')) {
+    const error = {
+      status: 'error' as const,
+      message: 'Please choose an image file (JPEG, PNG, or WebP).',
+    }
+    report(error)
+    return error
+  }
+
+  report({ status: 'loading', message: 'Reading image…' })
+
+  let img: HTMLImageElement
+  try {
+    img = await loadImage(file)
+  } catch (err) {
+    const error = {
+      status: 'error' as const,
+      message: err instanceof Error ? err.message : 'Could not read that image',
+    }
+    report(error)
+    return error
+  }
+
+  const fitsBox =
+    img.width <= NEWS_IMAGE_MAX_WIDTH && img.height <= NEWS_IMAGE_MAX_HEIGHT
+  if (fitsBox && file.size <= NEWS_IMAGE_MAX_BYTES) {
+    const ready = readyResult(
+      file,
+      { blob: file, contentType: file.type || 'image/jpeg' },
+      `Ready to add (${img.width}×${img.height}).`,
+    )
+    report(ready)
+    return ready
+  }
+
+  report({
+    status: 'resizing',
+    message: 'Resizing image for the article…',
+  })
+
+  const allowWebp = supportsWebpEncoding()
+  const qualitySteps = [0.82, 0.72, 0.6, 0.48]
+  let maxWidth = NEWS_IMAGE_MAX_WIDTH
+  let maxHeight = NEWS_IMAGE_MAX_HEIGHT
+  let best: EncodedCandidate | null = null
+  let bestSize = ''
+
+  for (let pass = 0; pass < 3; pass += 1) {
+    const canvas = drawFit(img, maxWidth, maxHeight)
+    for (const quality of qualitySteps) {
+      report({
+        status: 'resizing',
+        message: `Resizing to ${canvas.width}×${canvas.height}…`,
+      })
+      const candidates = await encodeCandidates(canvas, quality, allowWebp)
+      const smallest = pickSmallest(candidates)
+      if (!smallest) continue
+      if (!best || smallest.blob.size < best.blob.size) {
+        best = smallest
+        bestSize = `${canvas.width}×${canvas.height}`
+      }
+      if (smallest.blob.size <= NEWS_IMAGE_MAX_BYTES) {
+        const ready = readyResult(
+          file,
+          smallest,
+          `Resized to ${canvas.width}×${canvas.height} for the article.`,
+        )
+        report(ready)
+        return ready
+      }
+    }
+    maxWidth = Math.round(maxWidth * 0.75)
+    maxHeight = Math.round(maxHeight * 0.75)
+  }
+
+  if (best && best.blob.size <= GIG_IMAGE_MAX_BYTES) {
+    const ready = readyResult(
+      file,
+      best,
+      `Resized to ${bestSize} for the article.`,
+    )
+    report(ready)
+    return ready
+  }
+
+  const error = {
+    status: 'error' as const,
+    message: best
+      ? `Could not resize that image for an article (smallest was ${formatBytes(best.blob.size)}). Try a simpler photo.`
       : 'Image compression failed.',
   }
   report(error)
