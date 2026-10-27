@@ -309,7 +309,9 @@ export type BuildNewsletterEmailArgs = {
 
 export function buildNewsletterEmailHtml(args: BuildNewsletterEmailArgs): string {
   const base = siteBaseUrl()
-  const logoUrl = absoluteUrl('/images/efc-logo.webp', base)
+  // PNG — many clients (Outlook, older Gmail/Apple Mail) still skip WebP.
+  // Always load from production so deploy-preview SITE_URL does not break images.
+  const logoUrl = `${SITE_HOME}/images/efc-logo.png`
   const homeUrl = SITE_HOME
   const messageHtml = messageToHtml(args.message)
   const unsub = args.unsubscribeHref

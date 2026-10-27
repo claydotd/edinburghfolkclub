@@ -111,14 +111,16 @@ Anyone whose email is on the list can open `/members`. Paid status does not lock
 
 ## Newsletter
 
-Public signup posts to `/.netlify/functions/newsletter` (stored locally / Blobs / Postgres). Compose and send from `/admin/newsletter` via Resend: written message, selected news posts, and upcoming gigs, rendered as HTML that uses the site colours.
+Public signup posts to `/.netlify/functions/newsletter` (stored locally / Blobs / Postgres). Compose and send from `/admin/newsletter` via **Resend Broadcasts**: written message, selected news posts, and upcoming gigs, rendered as HTML that uses the site colours. Local subscribers are synced into a Resend Segment; list sends use `broadcasts.create` (test emails still use `emails.send`).
 
 | Piece | Role |
 |-------|------|
-| `newsletter_subscribers` table | Source of truth (migration `006_create_newsletter_subscribers.sql`) |
+| `newsletter_subscribers` table | Local source of truth (migration `006_create_newsletter_subscribers.sql`) |
+| Resend Segment (`RESEND_SEGMENT_ID`) | Delivery list for Broadcasts; contacts synced on signup/admin/import/send |
 | Blobs store `newsletter` / key `list` | Snapshot when the database is not connected |
-| `/.netlify/functions/newsletter` | Public subscribe + signed unsubscribe link |
+| `/.netlify/functions/newsletter` | Public subscribe + legacy signed unsubscribe link |
 | `/.netlify/functions/newsletter-admin` | Subscriber CRUD, HTML preview, test send, broadcast |
+| `/.netlify/functions/newsletter-resend-webhook` | Optional: sync Resend preference-page unsubscribes back to local store |
 | `/admin/newsletter` | Builder + subscriber list |
 | `.data/newsletter-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
 
@@ -137,8 +139,10 @@ Public signup posts to `/.netlify/functions/newsletter` (stored locally / Blobs 
 | `NEWS_ADMIN_PASSWORD` | Shared password for `/admin` |
 | `NEWS_ADMIN_SECRET` | HMAC secret for admin/member cookies and unsubscribe links |
 | `RESEND_API_KEY` | Resend API key for `/admin/newsletter` sends |
+| `RESEND_SEGMENT_ID` | Resend Segment ID that receives newsletter Broadcasts |
 | `NEWSLETTER_FROM` | Verified Resend from address (e.g. `Edinburgh Folk Club <newsletter@your-domain.com>`) |
 | `NEWSLETTER_SEND_KEY` | Password required in admin before sending a test or list email |
+| `RESEND_WEBHOOK_SECRET` | Optional Svix signing secret so Resend unsubscribes update the local list |
 | `SITE_URL` | Optional absolute origin for email links/images (Netlify usually sets `URL`) |
 
 4. Deploy, then open `/admin/members` and `/admin/gigs` once so the public snapshots match the database. Publish a news post to refresh the news snapshot.

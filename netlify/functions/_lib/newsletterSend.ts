@@ -1,13 +1,20 @@
 import { timingSafeEqual } from 'node:crypto'
-import { Resend } from 'resend'
 import { gigStore } from './gigStore.ts'
 import { isPastGigDate } from './gigTypes.ts'
 import {
   buildNewsletterEmailHtml,
   buildNewsletterText,
   siteBaseUrl,
-  unsubscribeUrl,
 } from './newsletterEmail.ts'
+import {
+  createAndSendBroadcast,
+  createResendClient,
+  getNewsletterFromAddress,
+  getResendApiKey,
+  RESEND_UNSUBSCRIBE_URL,
+  resendBroadcastConfigured,
+  syncContactsToResend,
+} from './newsletterResend.ts'
 import { newsletterStore } from './newsletterStore.ts'
 import type {
   NewsletterComposeInput,
@@ -18,22 +25,12 @@ import type {
 import { normalizeEmail } from './newsletterTypes.ts'
 import { newsStore } from './store.ts'
 
-function getResendApiKey(): string {
-  return (process.env.RESEND_API_KEY ?? '').trim()
-}
-
-function getFromAddress(): string {
-  return (
-    process.env.NEWSLETTER_FROM ??
-    'Edinburgh Folk Club <newsletter@efc1973.com>'
-  ).trim()
-}
-
 function getNewsletterSendKey(): string {
   return (process.env.NEWSLETTER_SEND_KEY ?? '').trim()
 }
 
 export function newsletterSendingConfigured(): boolean {
+  // Test sends need the API key; list sends also need RESEND_SEGMENT_ID.
   return Boolean(getResendApiKey() && getNewsletterSendKey())
 }
 
@@ -152,32 +149,27 @@ export async function previewNewsletterHtml(
   return { subject: payload.subject, html, text }
 }
 
-type SendResult = {
-  sent: number
-  failed: number
+export type NewsletterBroadcastResult = {
+  broadcastId: string
+  recipientCount: number
+  synced: number
+  syncFailed: number
   errors: string[]
 }
 
 async function sendOne(args: {
-  resend: Resend
-  from: string
   to: string
   subject: string
   html: string
   text: string
-  unsubscribeHref?: string
 }): Promise<void> {
-  const headers: Record<string, string> = {}
-  if (args.unsubscribeHref) {
-    headers['List-Unsubscribe'] = `<${args.unsubscribeHref}>`
-  }
-  const { error } = await args.resend.emails.send({
-    from: args.from,
+  const resend = createResendClient()
+  const { error } = await resend.emails.send({
+    from: getNewsletterFromAddress(),
     to: args.to,
     subject: args.subject,
     html: args.html,
     text: args.text,
-    headers: Object.keys(headers).length ? headers : undefined,
   })
   if (error) throw new Error(error.message)
 }
@@ -186,8 +178,7 @@ export async function sendNewsletterTest(
   input: NewsletterComposeInput,
 ): Promise<{ to: string }> {
   assertNewsletterSendKey(input.sendKey)
-  const apiKey = getResendApiKey()
-  if (!apiKey) {
+  if (!getResendApiKey()) {
     throw new Error(
       'RESEND_API_KEY is not configured. Add it in the Netlify environment to send mail.',
     )
@@ -205,10 +196,7 @@ export async function sendNewsletterTest(
     unsubscribeHref: `${siteBaseUrl()}/contact#newsletter`,
   })
 
-  const resend = new Resend(apiKey)
   await sendOne({
-    resend,
-    from: getFromAddress(),
     to,
     subject: `[Test] ${payload.subject}`,
     html,
@@ -219,12 +207,11 @@ export async function sendNewsletterTest(
 
 export async function sendNewsletterBroadcast(
   input: NewsletterComposeInput,
-): Promise<SendResult> {
+): Promise<NewsletterBroadcastResult> {
   assertNewsletterSendKey(input.sendKey)
-  const apiKey = getResendApiKey()
-  if (!apiKey) {
+  if (!resendBroadcastConfigured()) {
     throw new Error(
-      'RESEND_API_KEY is not configured. Add it in the Netlify environment to send mail.',
+      'Resend Broadcasts need RESEND_API_KEY and RESEND_SEGMENT_ID in the environment.',
     )
   }
 
@@ -234,46 +221,36 @@ export async function sendNewsletterBroadcast(
     throw new Error('There are no active subscribers to send to')
   }
 
-  const resend = new Resend(apiKey)
-  const from = getFromAddress()
-  const result: SendResult = { sent: 0, failed: 0, errors: [] }
-
-  // Resend rate limits; send in small sequential batches.
-  const chunkSize = 8
-  for (let i = 0; i < subscribers.length; i += chunkSize) {
-    const chunk = subscribers.slice(i, i + chunkSize)
-    await Promise.all(
-      chunk.map(async (subscriber) => {
-        const unsub = unsubscribeUrl(subscriber.id)
-        const html = buildNewsletterEmailHtml({
-          ...payload,
-          unsubscribeHref: unsub,
-        })
-        const text = buildNewsletterText({
-          ...payload,
-          unsubscribeHref: unsub,
-        })
-        try {
-          await sendOne({
-            resend,
-            from,
-            to: subscriber.email,
-            subject: payload.subject,
-            html,
-            text,
-            unsubscribeHref: unsub,
-          })
-          result.sent += 1
-        } catch (err) {
-          result.failed += 1
-          const message = err instanceof Error ? err.message : 'Send failed'
-          if (result.errors.length < 8) {
-            result.errors.push(`${subscriber.email}: ${message}`)
-          }
-        }
-      }),
+  const sync = await syncContactsToResend(subscribers.map((s) => s.email))
+  if (sync.synced === 0) {
+    throw new Error(
+      `Could not sync any subscribers to Resend.${
+        sync.errors.length ? ` ${sync.errors.join('; ')}` : ''
+      }`,
     )
   }
 
-  return result
+  const html = buildNewsletterEmailHtml({
+    ...payload,
+    unsubscribeHref: RESEND_UNSUBSCRIBE_URL,
+  })
+  const text = buildNewsletterText({
+    ...payload,
+    unsubscribeHref: RESEND_UNSUBSCRIBE_URL,
+  })
+
+  const { broadcastId } = await createAndSendBroadcast({
+    subject: payload.subject,
+    html,
+    text,
+    name: payload.subject.slice(0, 80),
+  })
+
+  return {
+    broadcastId,
+    recipientCount: subscribers.length,
+    synced: sync.synced,
+    syncFailed: sync.failed,
+    errors: sync.errors,
+  }
 }

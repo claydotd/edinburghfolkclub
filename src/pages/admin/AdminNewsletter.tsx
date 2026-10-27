@@ -351,7 +351,7 @@ export default function AdminNewsletter() {
   async function onSendAll() {
     if (
       !window.confirm(
-        `Send this newsletter to ${activeCount} active subscriber${activeCount === 1 ? '' : 's'}?`,
+        `Send this newsletter as a Resend Broadcast to ${activeCount} active subscriber${activeCount === 1 ? '' : 's'}?`,
       )
     ) {
       return
@@ -361,12 +361,16 @@ export default function AdminNewsletter() {
     setNotice(null)
     try {
       const result = await adminSendNewsletter(composePayload())
-      const failedNote =
-        result.failed > 0
-          ? ` ${result.failed} failed${result.errors.length ? `: ${result.errors.join('; ')}` : '.'}`
+      const syncNote =
+        result.syncFailed > 0
+          ? ` ${result.syncFailed} contact sync issue${result.syncFailed === 1 ? '' : 's'}${
+              result.errors.length ? `: ${result.errors.join('; ')}` : '.'
+            }`
           : ''
       setNotice(
-        `Sent to ${result.sent} subscriber${result.sent === 1 ? '' : 's'}.${failedNote}`,
+        `Broadcast queued for ${result.recipientCount} subscriber${
+          result.recipientCount === 1 ? '' : 's'
+        } (${result.synced} synced to Resend).${syncNote}`,
       )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Send failed')

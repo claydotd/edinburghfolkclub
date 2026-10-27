@@ -3,6 +3,12 @@ import { isAuthenticated } from './_lib/auth.ts'
 import { connectBlobs } from './_lib/blobs.ts'
 import { json, noStoreHeaders, readJsonBody } from './_lib/http.ts'
 import {
+  syncResendEmailsBestEffort,
+  syncResendRemoveBestEffort,
+  syncResendSubscribeBestEffort,
+  syncResendUnsubscribeBestEffort,
+} from './_lib/newsletterResend.ts'
+import {
   newsletterSendingConfigured,
   previewNewsletterHtml,
   sendNewsletterBroadcast,
@@ -104,6 +110,7 @@ export const handler: Handler = async (event) => {
       if (!id) return json(400, { error: 'Missing id' }, noStoreHeaders())
       try {
         const subscriber = await newsletterStore.unsubscribe(id)
+        await syncResendUnsubscribeBestEffort(subscriber.email)
         return json(200, { subscriber }, noStoreHeaders())
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unsubscribe failed'
@@ -146,6 +153,8 @@ export const handler: Handler = async (event) => {
           : 'csv-import'
       try {
         const result = await newsletterStore.importMany(valid, source)
+        // Sync newly added / reactivated addresses into the Resend segment.
+        await syncResendEmailsBestEffort(valid)
         return json(
           200,
           { ...result, invalid, total: body.emails.length },
@@ -168,6 +177,7 @@ export const handler: Handler = async (event) => {
           email,
           source: body.source ?? 'admin',
         })
+        await syncResendSubscribeBestEffort(subscriber.email)
         return json(201, { subscriber }, noStoreHeaders())
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Create failed'
@@ -178,7 +188,11 @@ export const handler: Handler = async (event) => {
     if (event.httpMethod === 'DELETE') {
       if (!id) return json(400, { error: 'Missing id' }, noStoreHeaders())
       try {
+        const existing = await newsletterStore.getById(id)
         await newsletterStore.remove(id)
+        if (existing?.email) {
+          await syncResendRemoveBestEffort(existing.email)
+        }
         return json(200, { ok: true }, noStoreHeaders())
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Delete failed'
