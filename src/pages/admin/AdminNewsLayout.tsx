@@ -43,6 +43,9 @@ export default function AdminNewsLayout() {
         <NavLink to="/admin/banner">Homepage banners</NavLink>
         {isNewsDemo() ? null : <NavLink to="/admin/members">Members</NavLink>}
         {isNewsDemo() ? null : (
+          <NavLink to="/admin/newsletter">Newsletter</NavLink>
+        )}
+        {isNewsDemo() ? null : (
           <NavLink to="/admin/reservations">Reservations</NavLink>
         )}
       </nav>

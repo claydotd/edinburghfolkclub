@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 type NetlifyFormProps = {
-  name: 'contact' | 'newsletter' | 'play-efc';
+  name: 'contact' | 'play-efc';
   children: (props: {
     submitted: boolean;
     submitting: boolean;

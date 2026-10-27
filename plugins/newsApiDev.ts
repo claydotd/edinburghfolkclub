@@ -27,6 +27,23 @@ import {
   normalizeEmail,
   validateMemberInput,
 } from '../netlify/functions/_lib/memberTypes.ts'
+import { verifyUnsubscribeToken } from '../netlify/functions/_lib/newsletterEmail.ts'
+import {
+  newsletterSendingConfigured,
+  previewNewsletterHtml,
+  sendNewsletterBroadcast,
+  sendNewsletterTest,
+} from '../netlify/functions/_lib/newsletterSend.ts'
+import { newsletterStore } from '../netlify/functions/_lib/newsletterStore.ts'
+import type {
+  NewsletterComposeInput,
+  NewsletterSubscriberInput,
+} from '../netlify/functions/_lib/newsletterTypes.ts'
+import {
+  isValidEmail,
+  validateComposeInput,
+  validateSubscribeInput,
+} from '../netlify/functions/_lib/newsletterTypes.ts'
 import { reservationStore } from '../netlify/functions/_lib/reservationStore.ts'
 import {
   adminReservationView,
@@ -654,6 +671,232 @@ async function handleMembersAdmin(
   sendJson(res, 405, { error: 'Method not allowed' })
 }
 
+function sendHtml(res: ServerResponse, title: string, body: string) {
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+  })
+  res.end(`<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>${title}</title></head>
+<body><main><h1>${title}</h1>${body}</main></body>
+</html>`)
+}
+
+async function handleNewsletter(
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+) {
+  if (req.method === 'OPTIONS') {
+    sendJson(res, 204, null)
+    return
+  }
+
+  const action = url.searchParams.get('action') ?? 'subscribe'
+
+  if (req.method === 'GET' && action === 'unsubscribe') {
+    const token = url.searchParams.get('token') ?? ''
+    const id = verifyUnsubscribeToken(token)
+    if (!id) {
+      sendHtml(res, 'Unsubscribe', '<p>This unsubscribe link is invalid.</p>')
+      return
+    }
+    try {
+      await newsletterStore.unsubscribe(id)
+    } catch {
+      // Already gone.
+    }
+    sendHtml(
+      res,
+      'Unsubscribed',
+      '<p>You have been removed from the mailing list.</p>',
+    )
+    return
+  }
+
+  if (req.method === 'POST') {
+    const raw = await readBody(req)
+    const body = (
+      raw
+        ? JSON.parse(raw)
+        : {}
+    ) as NewsletterSubscriberInput & {
+      consent?: boolean | string
+      botField?: string
+    }
+    if (typeof body.botField === 'string' && body.botField.trim()) {
+      sendJson(res, 200, { ok: true })
+      return
+    }
+    const error = validateSubscribeInput(body)
+    if (error) {
+      sendJson(res, 400, { error })
+      return
+    }
+    await newsletterStore.subscribe({
+      email: normalizeEmail(body.email ?? ''),
+      source: body.source ?? 'signup',
+    })
+    sendJson(res, 200, { ok: true })
+    return
+  }
+
+  sendJson(res, 405, { error: 'Method not allowed' })
+}
+
+async function handleNewsletterAdmin(
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+) {
+  if (req.method === 'OPTIONS') {
+    sendJson(res, 204, null)
+    return
+  }
+
+  if (!isAuthenticated(req.headers.cookie)) {
+    sendJson(res, 401, { error: 'Unauthorized' })
+    return
+  }
+
+  const id = url.searchParams.get('id')?.trim()
+  const action = url.searchParams.get('action')
+
+  if (req.method === 'GET' && action === 'status') {
+    const subscribers = await newsletterStore.list()
+    const active = subscribers.filter((subscriber) => !subscriber.unsubscribedAt)
+    sendJson(res, 200, {
+      configured: newsletterSendingConfigured(),
+      total: subscribers.length,
+      active: active.length,
+    })
+    return
+  }
+
+  if (req.method === 'GET') {
+    if (id) {
+      const subscriber = await newsletterStore.getById(id)
+      if (!subscriber) {
+        sendJson(res, 404, { error: 'Subscriber not found' })
+        return
+      }
+      sendJson(res, 200, { subscriber })
+      return
+    }
+    sendJson(res, 200, { subscribers: await newsletterStore.list() })
+    return
+  }
+
+  if (req.method === 'POST' && action === 'preview') {
+    const raw = await readBody(req)
+    const body = raw
+      ? (JSON.parse(raw) as NewsletterComposeInput)
+      : ({} as NewsletterComposeInput)
+    const error = validateComposeInput(body)
+    if (error) {
+      sendJson(res, 400, { error })
+      return
+    }
+    sendJson(res, 200, await previewNewsletterHtml(body))
+    return
+  }
+
+  if (req.method === 'POST' && action === 'send-test') {
+    const raw = await readBody(req)
+    const body = raw
+      ? (JSON.parse(raw) as NewsletterComposeInput)
+      : ({} as NewsletterComposeInput)
+    const error = validateComposeInput(body)
+    if (error) {
+      sendJson(res, 400, { error })
+      return
+    }
+    try {
+      sendJson(res, 200, await sendNewsletterTest(body))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Send failed'
+      sendJson(res, 400, { error: message })
+    }
+    return
+  }
+
+  if (req.method === 'POST' && action === 'send') {
+    const raw = await readBody(req)
+    const body = raw
+      ? (JSON.parse(raw) as NewsletterComposeInput)
+      : ({} as NewsletterComposeInput)
+    const error = validateComposeInput(body)
+    if (error) {
+      sendJson(res, 400, { error })
+      return
+    }
+    try {
+      sendJson(res, 200, await sendNewsletterBroadcast(body))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Send failed'
+      sendJson(res, 400, { error: message })
+    }
+    return
+  }
+
+  if (req.method === 'POST' && action === 'unsubscribe') {
+    if (!id) {
+      sendJson(res, 400, { error: 'Missing id' })
+      return
+    }
+    try {
+      sendJson(res, 200, {
+        subscriber: await newsletterStore.unsubscribe(id),
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unsubscribe failed'
+      sendJson(res, storeErrorStatus(message, 500), { error: message })
+    }
+    return
+  }
+
+  if (req.method === 'POST') {
+    const raw = await readBody(req)
+    const body = raw
+      ? (JSON.parse(raw) as NewsletterSubscriberInput)
+      : ({} as NewsletterSubscriberInput)
+    const email = normalizeEmail(body.email ?? '')
+    if (!email || !isValidEmail(email)) {
+      sendJson(res, 400, { error: 'Enter a valid email address' })
+      return
+    }
+    try {
+      const subscriber = await newsletterStore.create({
+        email,
+        source: body.source ?? 'admin',
+      })
+      sendJson(res, 201, { subscriber })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Create failed'
+      sendJson(res, storeErrorStatus(message, 500), { error: message })
+    }
+    return
+  }
+
+  if (req.method === 'DELETE') {
+    if (!id) {
+      sendJson(res, 400, { error: 'Missing id' })
+      return
+    }
+    try {
+      await newsletterStore.remove(id)
+      sendJson(res, 200, { ok: true })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Delete failed'
+      sendJson(res, storeErrorStatus(message, 500), { error: message })
+    }
+    return
+  }
+
+  sendJson(res, 405, { error: 'Method not allowed' })
+}
+
 /** Dev-only middleware mirroring /.netlify/functions/news(+-admin) against the local file store. */
 export function newsApiDevPlugin(): Plugin {
   return {
@@ -680,6 +923,14 @@ export function newsApiDevPlugin(): Plugin {
           }
           if (url.pathname === '/.netlify/functions/members-admin') {
             await handleMembersAdmin(req, res, url)
+            return
+          }
+          if (url.pathname === '/.netlify/functions/newsletter') {
+            await handleNewsletter(req, res, url)
+            return
+          }
+          if (url.pathname === '/.netlify/functions/newsletter-admin') {
+            await handleNewsletterAdmin(req, res, url)
             return
           }
         } catch (err) {

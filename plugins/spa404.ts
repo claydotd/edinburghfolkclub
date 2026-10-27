@@ -31,6 +31,8 @@ export const spaPaths = [
   '/admin/gigs/new',
   '/admin/gigs/:id',
   '/admin/members',
+  '/admin/newsletter',
+  '/admin/newsletter/subscribers',
   '/admin/reservations',
   '/admin/new',
   '/admin/:id',

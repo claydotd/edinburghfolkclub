@@ -1,12 +1,12 @@
 # Edinburgh Folk Club
 
-React + Vite site. **Netlify** is the production host: news, gigs, and members use Functions + Database + Blobs, and the contact forms post to Netlify Forms. GitHub Pages remains a static demo (`VITE_NEWS_DEMO=1`) with example news and a local-only members sign-in. `npm run dev` uses a file store in `.data/` for news, gigs, and members.
+React + Vite site. **Netlify** is the production host: news, gigs, members, and the newsletter use Functions + Database + Blobs; contact and play-at-EFC forms post to Netlify Forms. GitHub Pages remains a static demo (`VITE_NEWS_DEMO=1`) with example news and a local-only members sign-in. `npm run dev` uses a file store in `.data/` for news, gigs, members, and newsletter subscribers.
 
 ## Scripts
 
 ```bash
 npm install
-npm run dev      # local development (file-backed news, gigs, and members)
+npm run dev      # local development (file-backed news, gigs, members, newsletter)
 npm run build    # production build → dist/
 npm run preview  # preview the production build
 ```
@@ -109,9 +109,22 @@ Anyone whose email is on the list can open `/members`. Paid status does not lock
 | `.data/members-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
 | `.data/reservations-local.json` | File-backed reservations for Vite/`NEWS_USE_LOCAL` (gitignored) |
 
+## Newsletter
+
+Public signup posts to `/.netlify/functions/newsletter` (stored locally / Blobs / Postgres). Compose and send from `/admin/newsletter` via Resend: written message, selected news posts, and upcoming gigs, rendered as HTML that uses the site colours.
+
+| Piece | Role |
+|-------|------|
+| `newsletter_subscribers` table | Source of truth (migration `006_create_newsletter_subscribers.sql`) |
+| Blobs store `newsletter` / key `list` | Snapshot when the database is not connected |
+| `/.netlify/functions/newsletter` | Public subscribe + signed unsubscribe link |
+| `/.netlify/functions/newsletter-admin` | Subscriber CRUD, HTML preview, test send, broadcast |
+| `/admin/newsletter` | Builder + subscriber list |
+| `.data/newsletter-local.json` | File-backed store for Vite/`NEWS_USE_LOCAL` (gitignored) |
+
 ## Forms
 
-`contact`, `newsletter`, and `play-efc` are detected from the hidden forms in `index.html`. Production Netlify builds set `VITE_NETLIFY_FORMS=1` and POST submissions to Netlify Forms. `npm run dev` and the Pages demo show a local success message instead.
+`contact` and `play-efc` are detected from the hidden forms in `index.html`. Production Netlify builds set `VITE_NETLIFY_FORMS=1` and POST those submissions to Netlify Forms. The mailing list uses the newsletter function above instead. `npm run dev` and the Pages demo show a local success message for contact forms.
 
 ## Deploy to Netlify
 
@@ -122,10 +135,14 @@ Anyone whose email is on the list can open `/members`. Paid status does not lock
 | Variable | Purpose |
 |----------|---------|
 | `NEWS_ADMIN_PASSWORD` | Shared password for `/admin` |
-| `NEWS_ADMIN_SECRET` | HMAC secret for the admin and member session cookies |
+| `NEWS_ADMIN_SECRET` | HMAC secret for admin/member cookies and unsubscribe links |
+| `RESEND_API_KEY` | Resend API key for `/admin/newsletter` sends |
+| `NEWSLETTER_FROM` | Verified Resend from address (e.g. `Edinburgh Folk Club <newsletter@your-domain.com>`) |
+| `NEWSLETTER_SEND_KEY` | Password required in admin before sending a test or list email |
+| `SITE_URL` | Optional absolute origin for email links/images (Netlify usually sets `URL`) |
 
 4. Deploy, then open `/admin/members` and `/admin/gigs` once so the public snapshots match the database. Publish a news post to refresh the news snapshot.
-5. After the first deploy, confirm `contact`, `newsletter`, and `play-efc` appear under **Forms**.
+5. After the first deploy, confirm `contact` and `play-efc` appear under **Forms**.
 
 Local Vite defaults (dev only): password `local-dev-password`, secret `local-dev-secret-change-me`. `netlify dev` uses the linked site’s database and environment variables.
 

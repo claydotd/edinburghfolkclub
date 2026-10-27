@@ -32,6 +32,7 @@ const AdminHomeBanner = lazy(() => import('./pages/admin/AdminHomeBanner.tsx'))
 const AdminGigsList = lazy(() => import('./pages/admin/AdminGigsList.tsx'))
 const AdminGigEdit = lazy(() => import('./pages/admin/AdminGigEdit.tsx'))
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers.tsx'))
+const AdminNewsletter = lazy(() => import('./pages/admin/AdminNewsletter.tsx'))
 const AdminReservations = lazy(() => import('./pages/admin/AdminReservations.tsx'))
 const RequireAdmin = lazy(() => import('./news/RequireAdmin.tsx'))
 
@@ -72,6 +73,7 @@ function App() {
               <Route path="gigs" element={<AdminGigsList />} />
               <Route path="gigs/archive" element={<AdminGigsList archive />} />
               <Route path="members" element={<AdminMembers />} />
+              <Route path="newsletter/*" element={<AdminNewsletter />} />
               <Route path="reservations" element={<AdminReservations />} />
               <Route path="gigs/new" element={<AdminGigEdit />} />
               <Route path="gigs/:id" element={<AdminGigEdit />} />
