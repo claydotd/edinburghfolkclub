@@ -262,19 +262,15 @@ export default function AdminNewsletter() {
   useEffect(() => {
     if (isNewsDemo()) return
     let cancelled = false
-    Promise.all([
-      adminListPosts(),
-      adminListGigs(),
-      adminListSubscribers(),
-      adminNewsletterStatus(),
-    ])
-      .then(([postList, gigList, subscriberList, newsletterStatus]) => {
+    setError(null)
+
+    // Content pickers must not depend on Resend mailing-list APIs — a contacts
+    // failure previously emptied both lists via a shared Promise.all.
+    Promise.all([adminListPosts(), adminListGigs()])
+      .then(([postList, gigList]) => {
         if (cancelled) return
         setPosts(postList)
         setGigs(gigList)
-        setSubscribers(subscriberList)
-        setStatus(newsletterStatus)
-        setError(null)
         setSelectedGigs((current) => {
           if (current.length) return current
           return gigList
@@ -284,13 +280,28 @@ export default function AdminNewsletter() {
       })
       .catch((err: unknown) => {
         if (cancelled) return
-        setError(
-          err instanceof Error ? err.message : 'Failed to load newsletter data',
-        )
         setPosts([])
         setGigs([])
-        setSubscribers([])
+        setError(
+          err instanceof Error ? err.message : 'Failed to load posts and gigs',
+        )
       })
+
+    Promise.all([adminListSubscribers(), adminNewsletterStatus()])
+      .then(([subscriberList, newsletterStatus]) => {
+        if (cancelled) return
+        setSubscribers(subscriberList)
+        setStatus(newsletterStatus)
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        setSubscribers([])
+        setStatus(null)
+        setError(
+          err instanceof Error ? err.message : 'Failed to load mailing list',
+        )
+      })
+
     return () => {
       cancelled = true
     }
@@ -887,10 +898,20 @@ export default function AdminNewsletter() {
             </button>
           </form>
 
+          {status && !status.configured ? (
+            <p className="news-error" role="status">
+              Set RESEND_API_KEY and RESEND_SEGMENT_ID in the Netlify
+              environment to manage the mailing list.
+            </p>
+          ) : null}
           {subscribers === null ? (
             <p className="admin-loading">Loading subscribers…</p>
           ) : subscribers.length === 0 ? (
-            <p className="page-lede">No subscribers yet.</p>
+            <p className="page-lede">
+              {status && !status.configured
+                ? 'Mailing list unavailable until Resend is configured.'
+                : 'No subscribers yet.'}
+            </p>
           ) : (
             <div className="admin-member-table-wrap">
               <table className="admin-member-table">

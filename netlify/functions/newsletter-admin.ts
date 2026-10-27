@@ -42,13 +42,21 @@ export const handler: Handler = async (event) => {
 
   try {
     if (event.httpMethod === 'GET' && action === 'status') {
+      const configured =
+        newsletterSendingConfigured() && resendBroadcastConfigured()
+      if (!resendBroadcastConfigured()) {
+        return json(
+          200,
+          { configured: false, total: 0, active: 0 },
+          noStoreHeaders(),
+        )
+      }
       const subscribers = await newsletterContacts.list()
       const active = subscribers.filter((subscriber) => !subscriber.unsubscribedAt)
       return json(
         200,
         {
-          configured:
-            newsletterSendingConfigured() && resendBroadcastConfigured(),
+          configured,
           total: subscribers.length,
           active: active.length,
         },
@@ -63,6 +71,9 @@ export const handler: Handler = async (event) => {
           return json(404, { error: 'Subscriber not found' }, noStoreHeaders())
         }
         return json(200, { subscriber }, noStoreHeaders())
+      }
+      if (!resendBroadcastConfigured()) {
+        return json(200, { subscribers: [] }, noStoreHeaders())
       }
       const subscribers = await newsletterContacts.list()
       return json(200, { subscribers }, noStoreHeaders())
