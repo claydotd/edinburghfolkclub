@@ -74,11 +74,6 @@ export function verifyUnsubscribeToken(token: string): string | null {
   return match?.[1] ?? null
 }
 
-export function unsubscribeUrl(subscriberId: string, base = siteBaseUrl()): string {
-  const token = encodeURIComponent(createUnsubscribeToken(subscriberId))
-  return `${base}/.netlify/functions/newsletter?action=unsubscribe&token=${token}`
-}
-
 function escapeHtml(value: string): string {
   return value
     .replaceAll('&', '&amp;')

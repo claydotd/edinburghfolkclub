@@ -27,19 +27,15 @@ import {
   normalizeEmail,
   validateMemberInput,
 } from '../netlify/functions/_lib/memberTypes.ts'
+import { newsletterContacts } from '../netlify/functions/_lib/newsletterContacts.ts'
 import { verifyUnsubscribeToken } from '../netlify/functions/_lib/newsletterEmail.ts'
-import {
-  syncResendRemoveBestEffort,
-  syncResendSubscribeBestEffort,
-  syncResendUnsubscribeBestEffort,
-} from '../netlify/functions/_lib/newsletterResend.ts'
+import { resendBroadcastConfigured } from '../netlify/functions/_lib/newsletterResend.ts'
 import {
   newsletterSendingConfigured,
   previewNewsletterHtml,
   sendNewsletterBroadcast,
   sendNewsletterTest,
 } from '../netlify/functions/_lib/newsletterSend.ts'
-import { newsletterStore } from '../netlify/functions/_lib/newsletterStore.ts'
 import type {
   NewsletterComposeInput,
   NewsletterSubscriberInput,
@@ -708,11 +704,7 @@ async function handleNewsletter(
       return
     }
     try {
-      const existing = await newsletterStore.getById(id)
-      await newsletterStore.unsubscribe(id)
-      if (existing?.email) {
-        await syncResendUnsubscribeBestEffort(existing.email)
-      }
+      await newsletterContacts.unsubscribe(id)
     } catch {
       // Already gone.
     }
@@ -743,12 +735,10 @@ async function handleNewsletter(
       sendJson(res, 400, { error })
       return
     }
-    const email = normalizeEmail(body.email ?? '')
-    await newsletterStore.subscribe({
-      email,
+    await newsletterContacts.subscribe({
+      email: normalizeEmail(body.email ?? ''),
       source: body.source ?? 'signup',
     })
-    await syncResendSubscribeBestEffort(email)
     sendJson(res, 200, { ok: true })
     return
   }
@@ -775,10 +765,11 @@ async function handleNewsletterAdmin(
   const action = url.searchParams.get('action')
 
   if (req.method === 'GET' && action === 'status') {
-    const subscribers = await newsletterStore.list()
+    const subscribers = await newsletterContacts.list()
     const active = subscribers.filter((subscriber) => !subscriber.unsubscribedAt)
     sendJson(res, 200, {
-      configured: newsletterSendingConfigured(),
+      configured:
+        newsletterSendingConfigured() && resendBroadcastConfigured(),
       total: subscribers.length,
       active: active.length,
     })
@@ -787,7 +778,7 @@ async function handleNewsletterAdmin(
 
   if (req.method === 'GET') {
     if (id) {
-      const subscriber = await newsletterStore.getById(id)
+      const subscriber = await newsletterContacts.getById(id)
       if (!subscriber) {
         sendJson(res, 404, { error: 'Subscriber not found' })
         return
@@ -795,7 +786,7 @@ async function handleNewsletterAdmin(
       sendJson(res, 200, { subscriber })
       return
     }
-    sendJson(res, 200, { subscribers: await newsletterStore.list() })
+    sendJson(res, 200, { subscribers: await newsletterContacts.list() })
     return
   }
 
@@ -857,8 +848,7 @@ async function handleNewsletterAdmin(
       return
     }
     try {
-      const subscriber = await newsletterStore.unsubscribe(id)
-      await syncResendUnsubscribeBestEffort(subscriber.email)
+      const subscriber = await newsletterContacts.unsubscribe(id)
       sendJson(res, 200, { subscriber })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unsubscribe failed'
@@ -878,11 +868,10 @@ async function handleNewsletterAdmin(
       return
     }
     try {
-      const subscriber = await newsletterStore.create({
+      const subscriber = await newsletterContacts.create({
         email,
         source: body.source ?? 'admin',
       })
-      await syncResendSubscribeBestEffort(subscriber.email)
       sendJson(res, 201, { subscriber })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Create failed'
@@ -897,11 +886,7 @@ async function handleNewsletterAdmin(
       return
     }
     try {
-      const existing = await newsletterStore.getById(id)
-      await newsletterStore.remove(id)
-      if (existing?.email) {
-        await syncResendRemoveBestEffort(existing.email)
-      }
+      await newsletterContacts.remove(id)
       sendJson(res, 200, { ok: true })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Delete failed'

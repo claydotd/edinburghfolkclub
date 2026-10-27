@@ -2,19 +2,13 @@ import type { Handler } from '@netlify/functions'
 import { isAuthenticated } from './_lib/auth.ts'
 import { connectBlobs } from './_lib/blobs.ts'
 import { json, noStoreHeaders, readJsonBody } from './_lib/http.ts'
-import {
-  syncResendEmailsBestEffort,
-  syncResendRemoveBestEffort,
-  syncResendSubscribeBestEffort,
-  syncResendUnsubscribeBestEffort,
-} from './_lib/newsletterResend.ts'
+import { newsletterContacts } from './_lib/newsletterContacts.ts'
 import {
   newsletterSendingConfigured,
   previewNewsletterHtml,
   sendNewsletterBroadcast,
   sendNewsletterTest,
 } from './_lib/newsletterSend.ts'
-import { newsletterStore } from './_lib/newsletterStore.ts'
 import {
   normalizeEmail,
   validateComposeInput,
@@ -22,6 +16,7 @@ import {
   type NewsletterSubscriberInput,
 } from './_lib/newsletterTypes.ts'
 import { isValidEmail } from './_lib/newsletterTypes.ts'
+import { resendBroadcastConfigured } from './_lib/newsletterResend.ts'
 
 function unauthorized() {
   return json(401, { error: 'Unauthorized' }, noStoreHeaders())
@@ -47,12 +42,13 @@ export const handler: Handler = async (event) => {
 
   try {
     if (event.httpMethod === 'GET' && action === 'status') {
-      const subscribers = await newsletterStore.list()
+      const subscribers = await newsletterContacts.list()
       const active = subscribers.filter((subscriber) => !subscriber.unsubscribedAt)
       return json(
         200,
         {
-          configured: newsletterSendingConfigured(),
+          configured:
+            newsletterSendingConfigured() && resendBroadcastConfigured(),
           total: subscribers.length,
           active: active.length,
         },
@@ -62,13 +58,13 @@ export const handler: Handler = async (event) => {
 
     if (event.httpMethod === 'GET') {
       if (id) {
-        const subscriber = await newsletterStore.getById(id)
+        const subscriber = await newsletterContacts.getById(id)
         if (!subscriber) {
           return json(404, { error: 'Subscriber not found' }, noStoreHeaders())
         }
         return json(200, { subscriber }, noStoreHeaders())
       }
-      const subscribers = await newsletterStore.list()
+      const subscribers = await newsletterContacts.list()
       return json(200, { subscribers }, noStoreHeaders())
     }
 
@@ -109,8 +105,7 @@ export const handler: Handler = async (event) => {
     if (event.httpMethod === 'POST' && action === 'unsubscribe') {
       if (!id) return json(400, { error: 'Missing id' }, noStoreHeaders())
       try {
-        const subscriber = await newsletterStore.unsubscribe(id)
-        await syncResendUnsubscribeBestEffort(subscriber.email)
+        const subscriber = await newsletterContacts.unsubscribe(id)
         return json(200, { subscriber }, noStoreHeaders())
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unsubscribe failed'
@@ -147,14 +142,8 @@ export const handler: Handler = async (event) => {
         }
         valid.push(email)
       }
-      const source =
-        typeof body.source === 'string' && body.source.trim()
-          ? body.source.trim()
-          : 'csv-import'
       try {
-        const result = await newsletterStore.importMany(valid, source)
-        // Sync newly added / reactivated addresses into the Resend segment.
-        await syncResendEmailsBestEffort(valid)
+        const result = await newsletterContacts.importMany(valid)
         return json(
           200,
           { ...result, invalid, total: body.emails.length },
@@ -173,11 +162,10 @@ export const handler: Handler = async (event) => {
         return json(400, { error: 'Enter a valid email address' }, noStoreHeaders())
       }
       try {
-        const subscriber = await newsletterStore.create({
+        const subscriber = await newsletterContacts.create({
           email,
           source: body.source ?? 'admin',
         })
-        await syncResendSubscribeBestEffort(subscriber.email)
         return json(201, { subscriber }, noStoreHeaders())
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Create failed'
@@ -188,11 +176,7 @@ export const handler: Handler = async (event) => {
     if (event.httpMethod === 'DELETE') {
       if (!id) return json(400, { error: 'Missing id' }, noStoreHeaders())
       try {
-        const existing = await newsletterStore.getById(id)
-        await newsletterStore.remove(id)
-        if (existing?.email) {
-          await syncResendRemoveBestEffort(existing.email)
-        }
+        await newsletterContacts.remove(id)
         return json(200, { ok: true }, noStoreHeaders())
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Delete failed'

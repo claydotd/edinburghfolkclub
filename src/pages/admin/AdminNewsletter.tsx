@@ -361,16 +361,10 @@ export default function AdminNewsletter() {
     setNotice(null)
     try {
       const result = await adminSendNewsletter(composePayload())
-      const syncNote =
-        result.syncFailed > 0
-          ? ` ${result.syncFailed} contact sync issue${result.syncFailed === 1 ? '' : 's'}${
-              result.errors.length ? `: ${result.errors.join('; ')}` : '.'
-            }`
-          : ''
       setNotice(
-        `Broadcast queued for ${result.recipientCount} subscriber${
+        `Broadcast queued for ${result.recipientCount} active subscriber${
           result.recipientCount === 1 ? '' : 's'
-        } (${result.synced} synced to Resend).${syncNote}`,
+        } on Resend.`,
       )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Send failed')
@@ -496,7 +490,7 @@ export default function AdminNewsletter() {
           <p className="page-lede">
             {tab === 'compose'
               ? `Password is required to send emails.`
-              : `Manage the mailing list. ${activeCount} active subscriber${activeCount === 1 ? '' : 's'}.`}
+              : `Manage the Resend mailing list. ${activeCount} active subscriber${activeCount === 1 ? '' : 's'}.`}
           </p>
         </div>
       </header>

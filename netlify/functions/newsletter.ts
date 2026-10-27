@@ -1,12 +1,8 @@
 import type { Handler } from '@netlify/functions'
 import { connectBlobs } from './_lib/blobs.ts'
 import { json, noStoreHeaders, readJsonBody } from './_lib/http.ts'
+import { newsletterContacts } from './_lib/newsletterContacts.ts'
 import { verifyUnsubscribeToken } from './_lib/newsletterEmail.ts'
-import {
-  syncResendSubscribeBestEffort,
-  syncResendUnsubscribeBestEffort,
-} from './_lib/newsletterResend.ts'
-import { newsletterStore } from './_lib/newsletterStore.ts'
 import {
   normalizeEmail,
   validateSubscribeInput,
@@ -65,11 +61,7 @@ export const handler: Handler = async (event) => {
         )
       }
       try {
-        const existing = await newsletterStore.getById(id)
-        await newsletterStore.unsubscribe(id)
-        if (existing?.email) {
-          await syncResendUnsubscribeBestEffort(existing.email)
-        }
+        await newsletterContacts.unsubscribe(id)
       } catch {
         // Treat missing ids as already gone.
       }
@@ -92,12 +84,10 @@ export const handler: Handler = async (event) => {
       const error = validateSubscribeInput(body)
       if (error) return json(400, { error }, noStoreHeaders())
 
-      const email = normalizeEmail(body.email)
-      await newsletterStore.subscribe({
-        email,
+      await newsletterContacts.subscribe({
+        email: normalizeEmail(body.email),
         source: body.source ?? 'signup',
       })
-      await syncResendSubscribeBestEffort(email)
       return json(200, { ok: true }, noStoreHeaders())
     }
 

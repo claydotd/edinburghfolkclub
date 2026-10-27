@@ -2,13 +2,14 @@ import type { Handler } from '@netlify/functions'
 import { connectBlobs } from './_lib/blobs.ts'
 import { json, noStoreHeaders } from './_lib/http.ts'
 import { createResendClient, getResendApiKey } from './_lib/newsletterResend.ts'
-import { newsletterStore } from './_lib/newsletterStore.ts'
-import { normalizeEmail } from './_lib/newsletterTypes.ts'
 
 /**
- * Resend → local subscriber sync.
- * Configure in Resend → Webhooks → contact.updated (and optionally contact.deleted)
- * pointing at /.netlify/functions/newsletter-resend-webhook
+ * Resend webhook receiver (signature verification).
+ * The Resend Segment is the mailing-list source of truth, so contact events
+ * do not need to update a local store — this endpoint acknowledges delivery.
+ *
+ * Configure in Resend → Webhooks pointing at:
+ *   https://efc1973.com/.netlify/functions/newsletter-resend-webhook
  * with signing secret in RESEND_WEBHOOK_SECRET.
  */
 export const handler: Handler = async (event) => {
@@ -51,40 +52,15 @@ export const handler: Handler = async (event) => {
         signature: svixSignature,
       },
       webhookSecret,
-    }) as {
-      type?: string
-      data?: {
-        email?: string
-        unsubscribed?: boolean
-      }
-    }
+    }) as { type?: string }
 
-    const type = eventPayload.type ?? ''
-    const email = normalizeEmail(eventPayload.data?.email ?? '')
-    if (!email) {
-      return json(200, { ok: true, ignored: true }, noStoreHeaders())
-    }
-
-    if (type === 'contact.updated' && eventPayload.data?.unsubscribed === true) {
-      const subscriber = await newsletterStore.getByEmail(email)
-      if (subscriber && !subscriber.unsubscribedAt) {
-        await newsletterStore.unsubscribe(subscriber.id)
-      }
-      return json(200, { ok: true, unsubscribed: email }, noStoreHeaders())
-    }
-
-    if (type === 'contact.deleted') {
-      const subscriber = await newsletterStore.getByEmail(email)
-      if (subscriber) {
-        await newsletterStore.remove(subscriber.id)
-      }
-      return json(200, { ok: true, deleted: email }, noStoreHeaders())
-    }
-
-    return json(200, { ok: true, ignored: type }, noStoreHeaders())
+    return json(
+      200,
+      { ok: true, type: eventPayload.type ?? 'unknown' },
+      noStoreHeaders(),
+    )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Webhook failed'
-    // Invalid signature / payload
     if (/invalid|signature|verify/i.test(message)) {
       return json(400, { error: 'Invalid webhook' }, noStoreHeaders())
     }

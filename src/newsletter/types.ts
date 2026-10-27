@@ -39,8 +39,6 @@ export type NewsletterPreview = {
 export type NewsletterSendResult = {
   broadcastId: string
   recipientCount: number
-  synced: number
-  syncFailed: number
   errors: string[]
 }
 

@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto'
 import { gigStore } from './gigStore.ts'
 import { isPastGigDate } from './gigTypes.ts'
+import { newsletterContacts } from './newsletterContacts.ts'
 import {
   buildNewsletterEmailHtml,
   buildNewsletterText,
@@ -13,9 +14,7 @@ import {
   getResendApiKey,
   RESEND_UNSUBSCRIBE_URL,
   resendBroadcastConfigured,
-  syncContactsToResend,
 } from './newsletterResend.ts'
-import { newsletterStore } from './newsletterStore.ts'
 import type {
   NewsletterComposeInput,
   NewsletterGigItem,
@@ -30,7 +29,6 @@ function getNewsletterSendKey(): string {
 }
 
 export function newsletterSendingConfigured(): boolean {
-  // Test sends need the API key; list sends also need RESEND_SEGMENT_ID.
   return Boolean(getResendApiKey() && getNewsletterSendKey())
 }
 
@@ -51,17 +49,7 @@ export function assertNewsletterSendKey(provided: string | undefined): void {
 function newsInputsFromCompose(
   input: NewsletterComposeInput,
 ): NewsletterNewsItemInput[] {
-  if (Array.isArray(input.newsItems) && input.newsItems.length) {
-    return input.newsItems
-  }
-  // Back-compat for older clients that only sent post ids.
-  if (Array.isArray(input.newsPostIds) && input.newsPostIds.length) {
-    return input.newsPostIds.map((postId) => ({
-      source: 'post' as const,
-      postId,
-    }))
-  }
-  return []
+  return Array.isArray(input.newsItems) ? input.newsItems : []
 }
 
 async function resolveNewsItems(
@@ -152,8 +140,6 @@ export async function previewNewsletterHtml(
 export type NewsletterBroadcastResult = {
   broadcastId: string
   recipientCount: number
-  synced: number
-  syncFailed: number
   errors: string[]
 }
 
@@ -216,18 +202,9 @@ export async function sendNewsletterBroadcast(
   }
 
   const payload = await buildComposePayload(input)
-  const subscribers = await newsletterStore.listActive()
-  if (!subscribers.length) {
-    throw new Error('There are no active subscribers to send to')
-  }
-
-  const sync = await syncContactsToResend(subscribers.map((s) => s.email))
-  if (sync.synced === 0) {
-    throw new Error(
-      `Could not sync any subscribers to Resend.${
-        sync.errors.length ? ` ${sync.errors.join('; ')}` : ''
-      }`,
-    )
+  const recipientCount = await newsletterContacts.countActive()
+  if (!recipientCount) {
+    throw new Error('There are no active subscribers in the Resend segment to send to')
   }
 
   const html = buildNewsletterEmailHtml({
@@ -248,9 +225,7 @@ export async function sendNewsletterBroadcast(
 
   return {
     broadcastId,
-    recipientCount: subscribers.length,
-    synced: sync.synced,
-    syncFailed: sync.failed,
-    errors: sync.errors,
+    recipientCount,
+    errors: [],
   }
 }

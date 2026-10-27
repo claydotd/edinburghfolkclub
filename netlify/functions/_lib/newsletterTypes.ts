@@ -30,8 +30,6 @@ export type NewsletterComposeInput = {
   subject: string
   message: string
   newsItems?: NewsletterNewsItemInput[]
-  /** @deprecated Prefer newsItems */
-  newsPostIds?: string[]
   gigIds?: string[]
   testTo?: string
   /** Required for send-test and send; checked against NEWSLETTER_SEND_KEY. */
