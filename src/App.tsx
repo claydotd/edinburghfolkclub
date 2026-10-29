@@ -34,6 +34,7 @@ const AdminGigEdit = lazy(() => import('./pages/admin/AdminGigEdit.tsx'))
 const AdminMembers = lazy(() => import('./pages/admin/AdminMembers.tsx'))
 const AdminNewsletter = lazy(() => import('./pages/admin/AdminNewsletter.tsx'))
 const AdminReservations = lazy(() => import('./pages/admin/AdminReservations.tsx'))
+const AdminGallery = lazy(() => import('./pages/admin/AdminGallery.tsx'))
 const RequireAdmin = lazy(() => import('./news/RequireAdmin.tsx'))
 
 function RouteFallback() {
@@ -72,6 +73,7 @@ function App() {
               <Route path="banner" element={<AdminHomeBanner />} />
               <Route path="gigs" element={<AdminGigsList />} />
               <Route path="gigs/archive" element={<AdminGigsList archive />} />
+              <Route path="gallery" element={<AdminGallery />} />
               <Route path="members" element={<AdminMembers />} />
               <Route path="newsletter/*" element={<AdminNewsletter />} />
               <Route path="reservations" element={<AdminReservations />} />

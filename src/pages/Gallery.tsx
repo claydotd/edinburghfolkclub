@@ -11,11 +11,12 @@ import 'react-photo-album/rows.css'
 import ArtistDirectory from '../components/ArtistDirectory'
 import GalleryLightbox from '../components/GalleryLightbox'
 import {
-  gallery,
+  loadGalleryIndex,
   photoIncludesArtist,
   photosByYear,
   toAlbumPhotos,
   type GalleryAlbumPhoto,
+  type GalleryIndex,
 } from '../utils/gallery'
 import { publicUrl } from '../utils/publicUrl'
 import Reveal from '../components/Reveal'
@@ -26,6 +27,12 @@ function yearSectionId(year: string) {
   return `gallery-year-${year}`
 }
 
+const emptyIndex: GalleryIndex = {
+  years: [],
+  artists: [],
+  photos: [],
+}
+
 export default function Gallery() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [directoryOpen, setDirectoryOpen] = useState(false)
@@ -33,28 +40,56 @@ export default function Gallery() {
   const [lightboxPhoto, setLightboxPhoto] = useState<GalleryAlbumPhoto | null>(
     null,
   )
+  const [gallery, setGallery] = useState<GalleryIndex | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map())
   const deepLinkedYear = useRef(false)
+
+  useEffect(() => {
+    let cancelled = false
+    loadGalleryIndex()
+      .then((index) => {
+        if (!cancelled) {
+          setGallery(index)
+          setLoadError(null)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setGallery(emptyIndex)
+          setLoadError(
+            err instanceof Error ? err.message : 'Failed to load gallery',
+          )
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const artistParam = searchParams.get('artist')
   const yearParam = searchParams.get('year')
 
   const mode: BrowseMode = artistParam ? 'artist' : 'year'
+  const index = gallery ?? emptyIndex
   const selectedArtist =
-    gallery.artists.find((artist) => artist.slug === artistParam) ?? null
+    index.artists.find((artist) => artist.slug === artistParam) ?? null
 
-  const years = gallery.years
-  const yearPhotoMap = useMemo(() => photosByYear(gallery.photos), [])
+  const years = index.years
+  const yearPhotoMap = useMemo(
+    () => photosByYear(index.photos),
+    [index.photos],
+  )
 
   const artistPhotos = useMemo(() => {
     if (!selectedArtist) return []
     return toAlbumPhotos(
-      gallery.photos.filter((photo) =>
+      index.photos.filter((photo) =>
         photoIncludesArtist(photo, selectedArtist.slug),
       ),
       publicUrl,
     )
-  }, [selectedArtist])
+  }, [index.photos, selectedArtist])
 
   useEffect(() => {
     if (mode !== 'year' || years.length === 0) return
@@ -165,7 +200,14 @@ export default function Gallery() {
         </button>
       </div>
       </Reveal>
-      {mode === 'year' ? (
+
+      {gallery === null ? (
+        <p className="gallery-empty">Loading gallery…</p>
+      ) : loadError ? (
+        <p className="gallery-empty" role="alert">
+          {loadError}
+        </p>
+      ) : mode === 'year' ? (
         <Reveal variant="up" delay={300}>
         <div className="gallery-layout gallery-layout--year">
           {years.length > 0 ? (
@@ -201,7 +243,7 @@ export default function Gallery() {
           ) : null}
 
           <div className="gallery-main">
-            {gallery.photos.length === 0 ? (
+            {index.photos.length === 0 ? (
               <p className="gallery-empty">
                 Photos will appear here once they are added to the gallery.
               </p>
@@ -300,7 +342,7 @@ export default function Gallery() {
 
       <ArtistDirectory
         open={directoryOpen}
-        artists={gallery.artists}
+        artists={index.artists}
         selectedSlug={selectedArtist?.slug ?? null}
         onSelect={selectArtist}
         onClose={() => setDirectoryOpen(false)}

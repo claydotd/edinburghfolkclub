@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import { defineConfig, loadEnv } from 'vite'
-import { galleryIndexPlugin } from './plugins/galleryIndex.ts'
 import { newsApiDevPlugin } from './plugins/newsApiDev.ts'
 import { sitemapPlugin } from './plugins/sitemap.ts'
 import { spa404Plugin } from './plugins/spa404.ts'
@@ -23,7 +22,6 @@ export default defineConfig(({ mode }) => {
   return {
     base: process.env.VITE_BASE || '/',
     plugins: [
-      galleryIndexPlugin(rootDir),
       sitemapPlugin(),
       newsApiDevPlugin(),
       spa404Plugin(),

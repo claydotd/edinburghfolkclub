@@ -361,3 +361,201 @@ export async function compressNewsImage(
   report(error)
   return error
 }
+
+export const GALLERY_GRID_MAX_EDGE = 800
+export const GALLERY_FULL_MAX_EDGE = 1600
+export const GALLERY_GRID_MAX_BYTES = 200 * 1024
+export const GALLERY_FULL_MAX_BYTES = 500 * 1024
+
+export type GalleryCompressedSize = {
+  blob: Blob
+  previewUrl: string
+  contentType: string
+  filename: string
+  width: number
+  height: number
+  bytes: number
+}
+
+export type GalleryCompressProgress =
+  | { status: 'loading'; message: string }
+  | { status: 'resizing'; message: string }
+  | {
+      status: 'ready'
+      message: string
+      originalBytes: number
+      grid: GalleryCompressedSize
+      full: GalleryCompressedSize
+    }
+  | { status: 'error'; message: string }
+
+async function encodeToTarget(
+  img: HTMLImageElement,
+  maxEdge: number,
+  maxBytes: number,
+  allowWebp: boolean,
+  onStep?: (message: string) => void,
+): Promise<
+  | { ok: true; candidate: EncodedCandidate; width: number; height: number }
+  | { ok: false; message: string }
+> {
+  const edgeSteps = [
+    maxEdge,
+    Math.round(maxEdge * 0.85),
+    Math.round(maxEdge * 0.7),
+    Math.round(maxEdge * 0.55),
+  ].filter((edge, index, all) => edge >= 320 && all.indexOf(edge) === index)
+  const qualitySteps = [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]
+
+  let best: EncodedCandidate | null = null
+
+  for (const edge of edgeSteps) {
+    const canvas = drawScaled(img, edge)
+    for (const quality of qualitySteps) {
+      onStep?.(
+        `Resizing to ${canvas.width}×${canvas.height} at ${Math.round(quality * 100)}%…`,
+      )
+      const candidates = await encodeCandidates(canvas, quality, allowWebp)
+      const smallest = pickSmallest(candidates)
+      if (!smallest) continue
+      if (!best || smallest.blob.size < best.blob.size) {
+        best = smallest
+      }
+      if (smallest.blob.size <= maxBytes) {
+        return {
+          ok: true,
+          candidate: smallest,
+          width: canvas.width,
+          height: canvas.height,
+        }
+      }
+    }
+  }
+
+  if (best) {
+    return {
+      ok: false,
+      message: `Could not compress below ${formatBytes(maxBytes)} (smallest was ${formatBytes(best.blob.size)}).`,
+    }
+  }
+  return { ok: false, message: 'Image compression failed.' }
+}
+
+function gallerySizeResult(
+  file: File,
+  candidate: EncodedCandidate,
+  width: number,
+  height: number,
+  label: string,
+): GalleryCompressedSize {
+  return {
+    blob: candidate.blob,
+    previewUrl: URL.createObjectURL(candidate.blob),
+    contentType: candidate.contentType,
+    filename: outputFilename(
+      `${label}-${file.name.replace(/\.[^.]+$/, '') || 'photo'}`,
+      candidate.contentType,
+    ),
+    width,
+    height,
+    bytes: candidate.blob.size,
+  }
+}
+
+/**
+ * Build grid (~800px) and lightbox (~1600px) derivatives for a gallery upload.
+ */
+export async function compressGalleryImage(
+  file: File,
+  options: {
+    onProgress?: (progress: GalleryCompressProgress) => void
+  } = {},
+): Promise<GalleryCompressProgress & { status: 'ready' | 'error' }> {
+  const report = (progress: GalleryCompressProgress) => {
+    options.onProgress?.(progress)
+  }
+
+  if (!file.type.startsWith('image/')) {
+    const error = {
+      status: 'error' as const,
+      message: 'Please choose an image file (JPEG, PNG, or WebP).',
+    }
+    report(error)
+    return error
+  }
+
+  report({ status: 'loading', message: 'Reading image…' })
+
+  let img: HTMLImageElement
+  try {
+    img = await loadImage(file)
+  } catch (err) {
+    const error = {
+      status: 'error' as const,
+      message: err instanceof Error ? err.message : 'Could not read that image',
+    }
+    report(error)
+    return error
+  }
+
+  const allowWebp = supportsWebpEncoding()
+
+  report({
+    status: 'resizing',
+    message: `Compressing full image (original ${formatBytes(file.size)})…`,
+  })
+  const fullResult = await encodeToTarget(
+    img,
+    GALLERY_FULL_MAX_EDGE,
+    GALLERY_FULL_MAX_BYTES,
+    allowWebp,
+    (message) => report({ status: 'resizing', message: `Full: ${message}` }),
+  )
+  if (!fullResult.ok) {
+    const error = { status: 'error' as const, message: fullResult.message }
+    report(error)
+    return error
+  }
+
+  report({
+    status: 'resizing',
+    message: 'Compressing grid thumbnail…',
+  })
+  const gridResult = await encodeToTarget(
+    img,
+    GALLERY_GRID_MAX_EDGE,
+    GALLERY_GRID_MAX_BYTES,
+    allowWebp,
+    (message) => report({ status: 'resizing', message: `Grid: ${message}` }),
+  )
+  if (!gridResult.ok) {
+    const error = { status: 'error' as const, message: gridResult.message }
+    report(error)
+    return error
+  }
+
+  const full = gallerySizeResult(
+    file,
+    fullResult.candidate,
+    fullResult.width,
+    fullResult.height,
+    'full',
+  )
+  const grid = gallerySizeResult(
+    file,
+    gridResult.candidate,
+    gridResult.width,
+    gridResult.height,
+    'grid',
+  )
+
+  const ready: GalleryCompressProgress & { status: 'ready' } = {
+    status: 'ready',
+    message: `Original ${formatBytes(file.size)} → grid ${formatBytes(grid.bytes)}, full ${formatBytes(full.bytes)}.`,
+    originalBytes: file.size,
+    grid,
+    full,
+  }
+  report(ready)
+  return ready
+}

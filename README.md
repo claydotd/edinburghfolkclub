@@ -154,6 +154,6 @@ Local Vite defaults (dev only): password `local-dev-password`, secret `local-dev
 | `gigs/` | Season JSON + per-gig markdown |
 | `content/about.md` | About page |
 | `content/terms.md` | Terms & Conditions |
-| `content/gallery.json` | Media gallery |
+| Gallery photos | Managed in `/admin/gallery` (Netlify Blobs). Migrate old `public/gallery` folders with `npm run migrate:gallery` |
 | `content/other-folk.json` | Other Folk links |
 | `content/members/` | Member documents (markdown). The people on the list live in the database, not in this folder |

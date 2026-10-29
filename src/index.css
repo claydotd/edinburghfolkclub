@@ -4896,6 +4896,244 @@ a.location-link:hover,
   border-color: color-mix(in srgb, var(--berry) 32%, transparent);
 }
 
+.admin-section-title {
+  margin: 0 0 0.85rem;
+  font-family: var(--heading);
+  font-size: 1.35rem;
+  color: var(--text-h);
+}
+
+.admin-gallery-upload,
+.admin-gallery-library {
+  margin-top: 1.75rem;
+}
+
+.admin-gallery-batch {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 0.95rem 1rem;
+  background: color-mix(in srgb, var(--white) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+@media (min-width: 720px) {
+  .admin-gallery-batch {
+    grid-template-columns: minmax(7rem, 9rem) minmax(10rem, 14rem) 1fr auto;
+    align-items: end;
+  }
+}
+
+.admin-gallery-batch-artists {
+  min-width: 0;
+}
+
+.admin-gallery-drop {
+  padding: 1.4rem 1.1rem;
+  text-align: center;
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 22%, transparent);
+  background: color-mix(in srgb, var(--white) 55%, transparent);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.admin-gallery-drop.is-dragging {
+  border-color: color-mix(in srgb, var(--moss) 55%, var(--ink));
+  background: var(--moss-wash);
+}
+
+.admin-gallery-drop-copy {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-h);
+}
+
+.admin-gallery-drop-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.admin-gallery-staging {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-gallery-staging-item {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  background: color-mix(in srgb, var(--white) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+@media (min-width: 720px) {
+  .admin-gallery-staging-item {
+    grid-template-columns: 7.5rem 1fr auto;
+    align-items: start;
+  }
+}
+
+.admin-gallery-staging-preview,
+.admin-gallery-staging-placeholder {
+  width: 7.5rem;
+  height: 7.5rem;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.admin-gallery-staging-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-gallery-staging-name {
+  margin: 0 0 0.35rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-h);
+}
+
+.admin-gallery-staging-fields {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+@media (min-width: 720px) {
+  .admin-gallery-staging-fields {
+    grid-template-columns: minmax(6rem, 8rem) minmax(9rem, 12rem) 1fr;
+  }
+}
+
+.admin-artist-tags {
+  position: relative;
+}
+
+.admin-artist-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  background: var(--white);
+}
+
+.admin-artist-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  background: color-mix(in srgb, var(--ink) 4%, var(--white));
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.admin-artist-tag:hover {
+  border-color: color-mix(in srgb, var(--berry) 45%, transparent);
+}
+
+.admin-artist-tags-input {
+  flex: 1 1 8rem;
+  min-width: 7rem;
+  border: 0;
+  padding: 0.35rem 0.25rem;
+  background: transparent;
+  font: inherit;
+}
+
+.admin-artist-tags-input:focus {
+  outline: none;
+}
+
+.admin-artist-suggest {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.2rem);
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: var(--white);
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.admin-artist-suggest button {
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.7rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-artist-suggest button:hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.admin-gallery-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.admin-gallery-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--white) 72%, transparent);
+  overflow: hidden;
+}
+
+.admin-gallery-card-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.admin-gallery-card-body,
+.admin-gallery-edit {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem 0.85rem 0.9rem;
+}
+
+.admin-gallery-card-title {
+  margin: 0;
+  font-weight: var(--weight-bold);
+  color: var(--text-h);
+}
+
+.admin-gallery-card-meta {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.admin-gallery-card-actions,
+.admin-gallery-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
 .news-image-field {
   gap: 0.65rem;
 }

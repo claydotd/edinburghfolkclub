@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import type { GalleryAlbumPhoto } from '../utils/gallery'
+import {
+  captionForPhoto,
+  type GalleryAlbumPhoto,
+} from '../utils/gallery'
 
 type GalleryLightboxProps = {
   photo: GalleryAlbumPhoto | null
@@ -31,7 +34,7 @@ export default function GalleryLightbox({ photo, onClose }: GalleryLightboxProps
 
   if (!photo) return null
 
-  const caption = [photo.artistLabel, photo.year].filter(Boolean).join(' · ')
+  const caption = captionForPhoto(photo)
 
   return createPortal(
     <div className="gallery-lightbox" role="presentation">

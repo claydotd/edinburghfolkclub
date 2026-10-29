@@ -11,6 +11,18 @@ import {
   passwordsMatch,
   sessionCookieHeader,
 } from '../netlify/functions/_lib/auth.ts'
+import { galleryStore } from '../netlify/functions/_lib/galleryStore.ts'
+import type {
+  GalleryImageUpload,
+  GalleryPhotoInput,
+  GalleryPhotoUpdateInput,
+} from '../netlify/functions/_lib/galleryTypes.ts'
+import {
+  buildPublicIndex,
+  parseGalleryImageKey,
+  validateGalleryPhotoInput,
+  validateGalleryPhotoUpdate,
+} from '../netlify/functions/_lib/galleryTypes.ts'
 import { gigStore } from '../netlify/functions/_lib/gigStore.ts'
 import type {
   GigImageUpload,
@@ -219,6 +231,159 @@ async function handleGigs(req: IncomingMessage, res: ServerResponse, url: URL) {
     return
   }
   sendJson(res, 200, state)
+}
+
+async function handleGallery(
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+) {
+  if (req.method === 'OPTIONS') {
+    sendJson(res, 204, null)
+    return
+  }
+  if (req.method !== 'GET') {
+    sendJson(res, 405, { error: 'Method not allowed' })
+    return
+  }
+
+  if (url.searchParams.get('resource')?.trim() === 'image') {
+    const key = parseGalleryImageKey(url.searchParams.get('key'))
+    if (!key) {
+      sendJson(res, 400, { error: 'Missing image key' })
+      return
+    }
+    const image = await galleryStore.getImage(key)
+    if (!image) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' })
+      res.end('Not found')
+      return
+    }
+    res.writeHead(200, {
+      'Content-Type': image.contentType,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    })
+    res.end(image.buffer)
+    return
+  }
+
+  const state = await galleryStore.list()
+  sendJson(res, 200, buildPublicIndex(state))
+}
+
+async function handleGalleryAdmin(
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+) {
+  if (req.method === 'OPTIONS') {
+    sendJson(res, 204, null)
+    return
+  }
+
+  const cookies = req.headers.cookie
+  if (!isAuthenticated(cookies)) {
+    sendJson(res, 401, { error: 'Unauthorized' })
+    return
+  }
+
+  const id = url.searchParams.get('id')
+  const action = url.searchParams.get('action')
+
+  if (action === 'image' && req.method === 'POST') {
+    const raw = await readBody(req)
+    const body = raw
+      ? (JSON.parse(raw) as GalleryImageUpload)
+      : ({} as GalleryImageUpload)
+    if (!body.dataBase64?.trim()) {
+      sendJson(res, 400, { error: 'Image data is required' })
+      return
+    }
+    try {
+      const uploaded = await galleryStore.uploadImage(body)
+      sendJson(res, 201, uploaded)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Upload failed'
+      sendJson(res, 400, { error: message })
+    }
+    return
+  }
+
+  if (req.method === 'GET') {
+    if (id) {
+      const photo = await galleryStore.getById(id)
+      if (!photo) {
+        sendJson(res, 404, { error: 'Photo not found' })
+        return
+      }
+      sendJson(res, 200, { photo })
+      return
+    }
+    const state = await galleryStore.list()
+    sendJson(res, 200, state)
+    return
+  }
+
+  if (req.method === 'POST') {
+    const raw = await readBody(req)
+    const body = raw
+      ? (JSON.parse(raw) as GalleryPhotoInput)
+      : ({} as GalleryPhotoInput)
+    const error = validateGalleryPhotoInput(body)
+    if (error) {
+      sendJson(res, 400, { error })
+      return
+    }
+    try {
+      const photo = await galleryStore.create(body)
+      sendJson(res, 201, { photo })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Create failed'
+      sendJson(res, 500, { error: message })
+    }
+    return
+  }
+
+  if (req.method === 'PUT') {
+    if (!id) {
+      sendJson(res, 400, { error: 'Missing id' })
+      return
+    }
+    const raw = await readBody(req)
+    const body = raw
+      ? (JSON.parse(raw) as GalleryPhotoUpdateInput)
+      : ({} as GalleryPhotoUpdateInput)
+    const error = validateGalleryPhotoUpdate(body)
+    if (error) {
+      sendJson(res, 400, { error })
+      return
+    }
+    try {
+      const photo = await galleryStore.update(id, body)
+      sendJson(res, 200, { photo })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Update failed'
+      sendJson(res, message.includes('not found') ? 404 : 500, { error: message })
+    }
+    return
+  }
+
+  if (req.method === 'DELETE') {
+    if (!id) {
+      sendJson(res, 400, { error: 'Missing id' })
+      return
+    }
+    try {
+      await galleryStore.remove(id)
+      sendJson(res, 200, { ok: true })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Delete failed'
+      sendJson(res, message.includes('not found') ? 404 : 500, { error: message })
+    }
+    return
+  }
+
+  sendJson(res, 405, { error: 'Method not allowed' })
 }
 
 async function handleAdmin(req: IncomingMessage, res: ServerResponse, url: URL) {
@@ -912,6 +1077,14 @@ export function newsApiDevPlugin(): Plugin {
           }
           if (url.pathname === '/.netlify/functions/gigs') {
             await handleGigs(req, res, url)
+            return
+          }
+          if (url.pathname === '/.netlify/functions/gallery') {
+            await handleGallery(req, res, url)
+            return
+          }
+          if (url.pathname === '/.netlify/functions/gallery-admin') {
+            await handleGalleryAdmin(req, res, url)
             return
           }
           if (url.pathname === '/.netlify/functions/news-admin') {

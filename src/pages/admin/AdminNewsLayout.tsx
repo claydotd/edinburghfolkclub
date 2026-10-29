@@ -40,6 +40,7 @@ export default function AdminNewsLayout() {
         <NavLink to="/admin/gigs">
           Gigs
         </NavLink>
+        <NavLink to="/admin/gallery">Gallery</NavLink>
         <NavLink to="/admin/banner">Homepage banners</NavLink>
         {isNewsDemo() ? null : <NavLink to="/admin/members">Members</NavLink>}
         {isNewsDemo() ? null : (
