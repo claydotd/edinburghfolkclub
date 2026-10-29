@@ -4908,24 +4908,55 @@ a.location-link:hover,
   margin-top: 1.75rem;
 }
 
-.admin-gallery-batch {
-  display: grid;
+.admin-gallery-apply {
+  display: flex;
+  flex-direction: column;
   gap: 0.85rem;
-  margin-bottom: 1rem;
-  padding: 0.95rem 1rem;
+  margin: 1rem 0 0;
+  padding: 0.95rem 1rem 1.05rem;
   background: color-mix(in srgb, var(--white) 72%, transparent);
   border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
+.admin-gallery-apply-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-gallery-apply-title {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 1.1rem;
+  color: var(--text-h);
+}
+
+.admin-gallery-apply-lede {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.admin-gallery-apply-fields {
+  display: grid;
+  gap: 0.85rem;
+  align-items: start;
+}
+
 @media (min-width: 720px) {
-  .admin-gallery-batch {
-    grid-template-columns: minmax(7rem, 9rem) minmax(10rem, 14rem) 1fr auto;
-    align-items: end;
+  .admin-gallery-apply-fields {
+    grid-template-columns: minmax(7rem, 8.5rem) minmax(10rem, 13rem) minmax(0, 1fr);
   }
 }
 
-.admin-gallery-batch-artists {
+.admin-gallery-apply-artists {
   min-width: 0;
+}
+
+.admin-gallery-apply-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
 }
 
 .admin-gallery-drop {
@@ -5084,13 +5115,135 @@ a.location-link:hover,
   background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
+.admin-gallery-library-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.admin-gallery-library-header .admin-section-title {
+  margin-bottom: 0.2rem;
+}
+
+.admin-gallery-library-count {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.admin-gallery-library-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.admin-gallery-year-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.admin-gallery-year-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  background: color-mix(in srgb, var(--white) 80%, transparent);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.admin-gallery-year-chip:hover {
+  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.admin-gallery-year-chip.is-active {
+  border-color: color-mix(in srgb, var(--moss) 45%, transparent);
+  background: var(--moss-wash);
+}
+
+.admin-gallery-year-chip-count,
+.admin-gallery-date-count {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.admin-gallery-year-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-gallery-year-group {
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--white) 55%, transparent);
+}
+
+.admin-gallery-year-heading {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.55rem 0.85rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 0;
+  background: color-mix(in srgb, var(--white) 72%, transparent);
+  color: var(--text-h);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-gallery-year-heading:disabled {
+  cursor: default;
+}
+
+.admin-gallery-year-heading-label {
+  font-family: var(--heading);
+  font-size: 1.2rem;
+}
+
+.admin-gallery-year-heading-count,
+.admin-gallery-year-heading-toggle {
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.admin-gallery-year-body {
+  display: grid;
+  gap: 1rem;
+  padding: 0 0.9rem 0.95rem;
+}
+
+.admin-gallery-date-group {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.admin-gallery-date-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-h);
+}
+
 .admin-gallery-grid {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
 }
 
 .admin-gallery-card {

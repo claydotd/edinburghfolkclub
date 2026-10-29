@@ -58,6 +58,49 @@ function currentYear(): string {
   return String(new Date().getFullYear())
 }
 
+function compareYearsDesc(a: string, b: string) {
+  return b.localeCompare(a, undefined, { numeric: true })
+}
+
+type LibraryYearGroup = {
+  year: string
+  count: number
+  dateGroups: { key: string; label: string; photos: GalleryPhotoRecord[] }[]
+}
+
+function buildLibraryGroups(photos: GalleryPhotoRecord[]): LibraryYearGroup[] {
+  const byYear = new Map<string, GalleryPhotoRecord[]>()
+  for (const photo of photos) {
+    const list = byYear.get(photo.year) ?? []
+    list.push(photo)
+    byYear.set(photo.year, list)
+  }
+
+  return [...byYear.entries()]
+    .sort(([a], [b]) => compareYearsDesc(a, b))
+    .map(([year, yearPhotos]) => {
+      const byDate = new Map<string, GalleryPhotoRecord[]>()
+      for (const photo of yearPhotos) {
+        const key = photo.date ?? ''
+        const list = byDate.get(key) ?? []
+        list.push(photo)
+        byDate.set(key, list)
+      }
+      const dateGroups = [...byDate.entries()]
+        .sort(([a], [b]) => {
+          if (!a) return 1
+          if (!b) return -1
+          return b.localeCompare(a)
+        })
+        .map(([key, list]) => ({
+          key: key || 'undated',
+          label: key ? formatGalleryDate(key) : 'No date',
+          photos: list,
+        }))
+      return { year, count: yearPhotos.length, dateGroups }
+    })
+}
+
 function ArtistTagsInput({
   artists,
   suggestions,
@@ -182,6 +225,11 @@ export default function AdminGallery() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [libraryYear, setLibraryYear] = useState<string | 'all'>('all')
+  const [collapsedYears, setCollapsedYears] = useState<Set<string>>(
+    () => new Set(),
+  )
+  const didInitCollapse = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -202,6 +250,29 @@ export default function AdminGallery() {
       cancelled = true
     }
   }, [reloadToken])
+
+  const libraryGroups = useMemo(
+    () => (photos ? buildLibraryGroups(photos) : []),
+    [photos],
+  )
+
+  const visibleLibraryGroups = useMemo(() => {
+    if (libraryYear === 'all') return libraryGroups
+    return libraryGroups.filter((group) => group.year === libraryYear)
+  }, [libraryGroups, libraryYear])
+
+  useEffect(() => {
+    if (didInitCollapse.current || libraryGroups.length === 0) return
+    didInitCollapse.current = true
+    // Keep only the newest year expanded so a large library stays scannable.
+    const newest = libraryGroups[0]?.year
+    const collapsed = new Set(
+      libraryGroups
+        .map((group) => group.year)
+        .filter((year) => year !== newest),
+    )
+    setCollapsedYears(collapsed)
+  }, [libraryGroups])
 
   useEffect(() => {
     return () => {
@@ -514,17 +585,120 @@ export default function AdminGallery() {
     }
   }
 
+
   const readyCount = staging.filter((item) => item.status === 'ready').length
+
+  function toggleYearCollapsed(year: string) {
+    setCollapsedYears((prev) => {
+      const next = new Set(prev)
+      if (next.has(year)) next.delete(year)
+      else next.add(year)
+      return next
+    })
+  }
+
+  function expandAllYears() {
+    setCollapsedYears(new Set())
+  }
+
+  function collapseAllYears() {
+    setCollapsedYears(new Set(libraryGroups.map((group) => group.year)))
+  }
+
+  function renderPhotoCard(photo: GalleryPhotoRecord) {
+    return (
+      <li key={photo.id} className="admin-gallery-card">
+        <img src={thumbUrl(photo)} alt="" className="admin-gallery-card-img" />
+        {editingId === photo.id && editDraft ? (
+          <form className="admin-gallery-edit" onSubmit={saveEdit}>
+            <label className="form-field">
+              <span>Year</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={editDraft.year}
+                onChange={(event) =>
+                  setEditDraft({ ...editDraft, year: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label className="form-field">
+              <span>Date</span>
+              <input
+                type="date"
+                value={editDraft.date}
+                onChange={(event) =>
+                  setEditDraft({ ...editDraft, date: event.target.value })
+                }
+              />
+            </label>
+            <div className="form-field">
+              <span>Artists</span>
+              <ArtistTagsInput
+                id={`edit-artists-${photo.id}`}
+                artists={editDraft.artists}
+                suggestions={artistSuggestions}
+                onChange={(artists) =>
+                  setEditDraft({ ...editDraft, artists })
+                }
+              />
+            </div>
+            <div className="admin-gallery-edit-actions">
+              <button
+                type="submit"
+                className="admin-action-btn"
+                disabled={busyId === photo.id}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="admin-action-btn"
+                onClick={() => {
+                  setEditingId(null)
+                  setEditDraft(null)
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="admin-gallery-card-body">
+            <p className="admin-gallery-card-title">{photo.artistLabel}</p>
+            <p className="admin-gallery-card-meta">
+              {photo.date ? formatGalleryDate(photo.date) : photo.year}
+            </p>
+            <div className="admin-gallery-card-actions">
+              <button
+                type="button"
+                className="admin-action-btn"
+                onClick={() => startEdit(photo)}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="admin-post-delete"
+                disabled={busyId === photo.id}
+                onClick={() => void onDelete(photo)}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
+      </li>
+    )
+  }
 
   return (
     <main className="page admin-page">
       <header className="admin-page-header">
         <div>
           <h1 className="page-title">Gallery</h1>
-          <p className="page-lede">
-            Upload photos, tag artists, and set the event year (optional full
-            date). Images are compressed in the browser before upload.
-          </p>
+          <p className="page-lede">Upload photos to the gallery here.</p>
         </div>
       </header>
 
@@ -534,48 +708,13 @@ export default function AdminGallery() {
         </p>
       ) : null}
 
-      <section className="admin-gallery-upload" aria-labelledby="gallery-upload-heading">
+      <section
+        className="admin-gallery-upload"
+        aria-labelledby="gallery-upload-heading"
+      >
         <h2 id="gallery-upload-heading" className="admin-section-title">
           Upload photos
         </h2>
-
-        <div className="admin-gallery-batch">
-          <label className="form-field">
-            <span>Default year</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={batchYear}
-              onChange={(event) => setBatchYear(event.target.value)}
-              placeholder="YYYY"
-            />
-          </label>
-          <label className="form-field">
-            <span>Default date (optional)</span>
-            <input
-              type="date"
-              value={batchDate}
-              onChange={(event) => setBatchDate(event.target.value)}
-            />
-          </label>
-          <div className="form-field admin-gallery-batch-artists">
-            <label htmlFor="batch-artists">Default artists</label>
-            <ArtistTagsInput
-              id="batch-artists"
-              artists={batchArtists}
-              suggestions={artistSuggestions}
-              onChange={setBatchArtists}
-            />
-          </div>
-          <button
-            type="button"
-            className="admin-action-btn"
-            onClick={applyBatchDefaults}
-            disabled={staging.length === 0}
-          >
-            Apply defaults to staged photos
-          </button>
-        </div>
 
         <div
           className={`admin-gallery-drop${isDragging ? ' is-dragging' : ''}`}
@@ -604,9 +743,56 @@ export default function AdminGallery() {
             </button>
           </p>
           <p className="admin-gallery-drop-hint">
-            Multiple images OK. Each is resized to ~800px (grid) and ~1600px
-            (lightbox) before upload.
+            You can upload multiple photos at once. Each is resized before upload.
           </p>
+        </div>
+
+        <div className="admin-gallery-apply">
+          <div className="admin-gallery-apply-header">
+            <h3 className="admin-gallery-apply-title">Apply to all</h3>
+            <p className="admin-gallery-apply-lede">
+              Batch apply the same values to all photos in the staging list.
+            </p>
+          </div>
+          <div className="admin-gallery-apply-fields">
+            <label className="form-field">
+              <span>Year</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={batchYear}
+                onChange={(event) => setBatchYear(event.target.value)}
+                placeholder="YYYY"
+              />
+            </label>
+            <label className="form-field">
+              <span>Date (optional)</span>
+              <input
+                type="date"
+                value={batchDate}
+                onChange={(event) => setBatchDate(event.target.value)}
+              />
+            </label>
+            <div className="form-field admin-gallery-apply-artists">
+              <span>Artists</span>
+              <ArtistTagsInput
+                id="batch-artists"
+                artists={batchArtists}
+                suggestions={artistSuggestions}
+                onChange={setBatchArtists}
+              />
+            </div>
+          </div>
+          <div className="admin-gallery-apply-actions">
+            <button
+              type="button"
+              className="admin-action-btn"
+              onClick={applyBatchDefaults}
+              disabled={staging.length === 0}
+            >
+              Apply to all
+            </button>
+          </div>
         </div>
 
         {staging.length > 0 ? (
@@ -644,7 +830,9 @@ export default function AdminGallery() {
                         type="text"
                         inputMode="numeric"
                         value={item.year}
-                        disabled={item.status === 'uploading' || item.status === 'done'}
+                        disabled={
+                          item.status === 'uploading' || item.status === 'done'
+                        }
                         onChange={(event) =>
                           updateStaging(item.id, { year: event.target.value })
                         }
@@ -655,7 +843,9 @@ export default function AdminGallery() {
                       <input
                         type="date"
                         value={item.date}
-                        disabled={item.status === 'uploading' || item.status === 'done'}
+                        disabled={
+                          item.status === 'uploading' || item.status === 'done'
+                        }
                         onChange={(event) =>
                           updateStaging(item.id, { date: event.target.value })
                         }
@@ -703,10 +893,43 @@ export default function AdminGallery() {
         </div>
       </section>
 
-      <section className="admin-gallery-library" aria-labelledby="gallery-library-heading">
-        <h2 id="gallery-library-heading" className="admin-section-title">
-          Library
-        </h2>
+      <section
+        className="admin-gallery-library"
+        aria-labelledby="gallery-library-heading"
+      >
+        <div className="admin-gallery-library-header">
+          <div>
+            <h2 id="gallery-library-heading" className="admin-section-title">
+              Library
+            </h2>
+            {photos && photos.length > 0 ? (
+              <p className="admin-gallery-library-count">
+                {photos.length} photo{photos.length === 1 ? '' : 's'}
+                {libraryGroups.length > 1
+                  ? ` · ${libraryGroups.length} years`
+                  : ''}
+              </p>
+            ) : null}
+          </div>
+          {libraryGroups.length > 1 ? (
+            <div className="admin-gallery-library-tools">
+              <button
+                type="button"
+                className="admin-action-btn"
+                onClick={expandAllYears}
+              >
+                Expand all
+              </button>
+              <button
+                type="button"
+                className="admin-action-btn"
+                onClick={collapseAllYears}
+              >
+                Collapse all
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         {photos === null ? (
           <p className="admin-loading">Loading gallery…</p>
@@ -715,95 +938,117 @@ export default function AdminGallery() {
             <p className="page-lede">No gallery photos yet.</p>
           </div>
         ) : (
-          <ul className="admin-gallery-grid">
-            {photos.map((photo) => (
-              <li key={photo.id} className="admin-gallery-card">
-                <img src={thumbUrl(photo)} alt="" className="admin-gallery-card-img" />
-                {editingId === photo.id && editDraft ? (
-                  <form className="admin-gallery-edit" onSubmit={saveEdit}>
-                    <label className="form-field">
-                      <span>Year</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={editDraft.year}
-                        onChange={(event) =>
-                          setEditDraft({ ...editDraft, year: event.target.value })
-                        }
-                        required
-                      />
-                    </label>
-                    <label className="form-field">
-                      <span>Date</span>
-                      <input
-                        type="date"
-                        value={editDraft.date}
-                        onChange={(event) =>
-                          setEditDraft({ ...editDraft, date: event.target.value })
-                        }
-                      />
-                    </label>
-                    <div className="form-field">
-                      <span>Artists</span>
-                      <ArtistTagsInput
-                        id={`edit-artists-${photo.id}`}
-                        artists={editDraft.artists}
-                        suggestions={artistSuggestions}
-                        onChange={(artists) =>
-                          setEditDraft({ ...editDraft, artists })
-                        }
-                      />
-                    </div>
-                    <div className="admin-gallery-edit-actions">
-                      <button
-                        type="submit"
-                        className="admin-action-btn"
-                        disabled={busyId === photo.id}
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-action-btn"
-                        onClick={() => {
-                          setEditingId(null)
-                          setEditDraft(null)
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="admin-gallery-card-body">
-                    <p className="admin-gallery-card-title">{photo.artistLabel}</p>
-                    <p className="admin-gallery-card-meta">
-                      {photo.date
-                        ? formatGalleryDate(photo.date)
-                        : photo.year}
-                    </p>
-                    <div className="admin-gallery-card-actions">
-                      <button
-                        type="button"
-                        className="admin-action-btn"
-                        onClick={() => startEdit(photo)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-post-delete"
-                        disabled={busyId === photo.id}
-                        onClick={() => void onDelete(photo)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+          <>
+            {libraryGroups.length > 1 ? (
+              <div
+                className="admin-gallery-year-filter"
+                role="group"
+                aria-label="Filter library by year"
+              >
+                <button
+                  type="button"
+                  className={
+                    libraryYear === 'all'
+                      ? 'admin-gallery-year-chip is-active'
+                      : 'admin-gallery-year-chip'
+                  }
+                  aria-pressed={libraryYear === 'all'}
+                  onClick={() => setLibraryYear('all')}
+                >
+                  All years
+                </button>
+                {libraryGroups.map((group) => (
+                  <button
+                    key={group.year}
+                    type="button"
+                    className={
+                      libraryYear === group.year
+                        ? 'admin-gallery-year-chip is-active'
+                        : 'admin-gallery-year-chip'
+                    }
+                    aria-pressed={libraryYear === group.year}
+                    onClick={() => {
+                      setLibraryYear(group.year)
+                      setCollapsedYears((prev) => {
+                        const next = new Set(prev)
+                        next.delete(group.year)
+                        return next
+                      })
+                    }}
+                  >
+                    {group.year}
+                    <span className="admin-gallery-year-chip-count">
+                      {group.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="admin-gallery-year-list">
+              {visibleLibraryGroups.map((group) => {
+                const collapsed =
+                  libraryYear === 'all' && collapsedYears.has(group.year)
+                return (
+                  <section
+                    key={group.year}
+                    className="admin-gallery-year-group"
+                    aria-labelledby={`library-year-${group.year}`}
+                  >
+                    <button
+                      type="button"
+                      id={`library-year-${group.year}`}
+                      className="admin-gallery-year-heading"
+                      aria-expanded={!collapsed}
+                      onClick={() => {
+                        if (libraryYear !== 'all') return
+                        toggleYearCollapsed(group.year)
+                      }}
+                      disabled={libraryYear !== 'all'}
+                    >
+                      <span className="admin-gallery-year-heading-label">
+                        {group.year}
+                      </span>
+                      <span className="admin-gallery-year-heading-count">
+                        {group.count} photo{group.count === 1 ? '' : 's'}
+                      </span>
+                      {libraryYear === 'all' ? (
+                        <span className="admin-gallery-year-heading-toggle">
+                          {collapsed ? 'Show' : 'Hide'}
+                        </span>
+                      ) : null}
+                    </button>
+
+                    {collapsed ? null : (
+                      <div className="admin-gallery-year-body">
+                        {group.dateGroups.map((dateGroup) => (
+                          <div
+                            key={`${group.year}-${dateGroup.key}`}
+                            className="admin-gallery-date-group"
+                          >
+                            {group.dateGroups.length > 1 ||
+                            dateGroup.key !== 'undated' ? (
+                              <h4 className="admin-gallery-date-heading">
+                                {dateGroup.label}
+                                <span className="admin-gallery-date-count">
+                                  {dateGroup.photos.length}
+                                </span>
+                              </h4>
+                            ) : null}
+                            <ul className="admin-gallery-grid">
+                              {dateGroup.photos.map((photo) =>
+                                renderPhotoCard(photo),
+                              )}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                )
+              })}
+            </div>
+          </>
         )}
       </section>
     </main>
