@@ -4751,6 +4751,65 @@ a.location-link:hover,
   color: var(--accent);
 }
 
+.markdown-editor-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.markdown-editor-link-field {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 12rem;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--text-h);
+}
+
+.markdown-editor-link-field input {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  background: color-mix(in srgb, var(--white) 92%, var(--yellow));
+  color: var(--text-h);
+}
+
+.markdown-editor-link button {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  background: color-mix(in srgb, var(--white) 85%, var(--yellow));
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  color: var(--text);
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+}
+
+.markdown-editor-link button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.markdown-editor-link-error {
+  flex: 1 0 100%;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--md-red);
+}
+
+.markdown-editor.is-compact {
+  margin: 0;
+}
+
+.markdown-editor.is-compact .markdown-editor-visual,
+.markdown-editor.is-compact .markdown-editor-code {
+  min-height: 9rem;
+}
+
 .markdown-editor-toolbar button.md-color-red,
 .markdown-editor-toolbar button.md-color-red:hover {
   color: var(--md-red);

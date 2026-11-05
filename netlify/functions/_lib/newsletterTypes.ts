@@ -53,8 +53,6 @@ export type NewsletterGigItem = {
   venue: string
   doors: string
   music: string
-  tickets: string
-  ticketsAvailable: boolean
   imagepath: string
 }
 

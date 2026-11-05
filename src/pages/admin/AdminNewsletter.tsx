@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import MarkdownEditor from '../../components/MarkdownEditor'
 import { adminListGigs } from '../../gigs/api'
 import { formatGigDate, isPastGigDate, type Gig } from '../../gigs/types'
 import { adminListPosts, formatNewsDate, isNewsDemo } from '../../news/api'
@@ -209,6 +210,7 @@ export default function AdminNewsletter() {
   const tab = newsletterTab(pathname)
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
+  const messageRef = useRef('')
   const [testTo, setTestTo] = useState('')
   const [sendKey, setSendKey] = useState('')
   const [newsItems, setNewsItems] = useState<DraftNewsItem[]>([])
@@ -318,10 +320,15 @@ export default function AdminNewsletter() {
     )
   }
 
+  function updateMessage(value: string) {
+    messageRef.current = value
+    setMessage(value)
+  }
+
   function composePayload() {
     return {
       subject: subject.trim(),
-      message: message.trim(),
+      message: messageRef.current.trim(),
       newsItems: newsItems.map(toNewsItemInput),
       gigIds: selectedGigs,
       testTo: testTo.trim() || undefined,
@@ -546,16 +553,18 @@ export default function AdminNewsletter() {
                 maxLength={200}
               />
             </label>
-            <label className="form-field">
-              <span>Written message</span>
-              <textarea
+            <div className="form-field">
+              <MarkdownEditor
+                id="newsletter-message"
+                label="Written message"
                 value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                rows={8}
-                required
+                onChange={updateMessage}
                 placeholder="Hello folks, here’s what’s coming up at the club…"
+                formats={['bold', 'italic', 'link']}
+                variant="compact"
+                emailSafe
               />
-            </label>
+            </div>
 
             <section className="admin-newsletter-section">
               <div className="admin-newsletter-block-header">

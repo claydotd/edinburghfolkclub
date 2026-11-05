@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { renderNewsletterInline } from './newsletterRichText.ts'
 import type {
   NewsletterGigItem,
   NewsletterNewsItem,
@@ -111,8 +112,19 @@ type ParagraphStyle = {
   margin: string
 }
 
+const EMAIL_LINK_STYLE = `color:${THISTLE};text-decoration:underline;`
+
+function resolveNewsletterHref(href: string, base = siteBaseUrl()): string {
+  if (/^mailto:/i.test(href)) return href
+  return absoluteUrl(href, base)
+}
+
 /** Plain text → HTML paragraphs; keep single newlines as <br /> within a block. */
-function paragraphsToHtml(message: string, style: ParagraphStyle): string {
+function paragraphsToHtml(
+  message: string,
+  style: ParagraphStyle,
+  rich = false,
+): string {
   const blocks = message
     .replace(/\r\n/g, '\n')
     .trim()
@@ -122,19 +134,48 @@ function paragraphsToHtml(message: string, style: ParagraphStyle): string {
   if (!blocks.length) return ''
   return blocks
     .map((block) => {
-      const html = escapeHtml(block).replaceAll('\n', '<br />')
+      const html = (
+        rich
+          ? renderNewsletterInline(block, {
+              mode: 'html',
+              resolveHref: (href) => resolveNewsletterHref(href),
+              linkStyle: EMAIL_LINK_STYLE,
+            })
+          : escapeHtml(block)
+      ).replaceAll('\n', '<br />')
       return `<p style="margin:${style.margin};font-family:${FONT_SANS};font-size:${style.fontSize};line-height:${style.lineHeight};color:${TEXT};">${html}</p>`
     })
     .join('')
 }
 
-/** Intro / written message body. */
+function richTextToPlain(message: string, base: string): string {
+  const blocks = message
+    .replace(/\r\n/g, '\n')
+    .trim()
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+  return blocks
+    .map((block) =>
+      renderNewsletterInline(block, {
+        mode: 'text',
+        resolveHref: (href) => resolveNewsletterHref(href, base),
+      }),
+    )
+    .join('\n\n')
+}
+
+/** Intro / written message body. Bold, italic, and links from the composer. */
 export function messageToHtml(message: string): string {
-  return paragraphsToHtml(message, {
-    fontSize: '16px',
-    lineHeight: '1.55',
-    margin: '0 0 16px',
-  })
+  return paragraphsToHtml(
+    message,
+    {
+      fontSize: '16px',
+      lineHeight: '1.55',
+      margin: '0 0 16px',
+    },
+    true,
+  )
 }
 
 function buttonHtml(href: string, label: string): string {
@@ -250,10 +291,7 @@ function gigSectionHtml(gigs: NewsletterGigItem[], base: string): string {
       const blurb = gig.description.trim()
         ? `<p style="margin:10px 0 0;font-family:${FONT_SANS};font-size:15px;line-height:1.5;color:${TEXT};">${escapeHtml(gig.description.trim())}</p>`
         : ''
-      const ticket =
-        gig.ticketsAvailable && gig.tickets
-          ? `<p style="margin:14px 0 0;">${buttonHtml(gig.tickets, 'Tickets')}</p>`
-          : ''
+      const moreDetails = `<p style="margin:14px 0 0;">${buttonHtml(SITE_HOME, 'More details')}</p>`
 
       return `
         <tr>
@@ -274,7 +312,7 @@ function gigSectionHtml(gigs: NewsletterGigItem[], base: string): string {
                   </h3>
                   ${meta}
                   ${blurb}
-                  ${ticket}
+                  ${moreDetails}
                 </td>
               </tr>
             </table>
@@ -385,7 +423,7 @@ export function buildNewsletterText(args: BuildNewsletterEmailArgs): string {
   const lines = [
     'Edinburgh Folk Club',
     '',
-    args.message.trim(),
+    richTextToPlain(args.message, base),
   ]
 
   if (args.newsPosts.length) {
@@ -408,7 +446,7 @@ export function buildNewsletterText(args: BuildNewsletterEmailArgs): string {
           .filter(Boolean)
           .join(' · '),
         gig.description.trim(),
-        gig.ticketsAvailable && gig.tickets ? `Tickets: ${gig.tickets}` : '',
+        `More details: ${SITE_HOME}`,
         '',
       )
     }

@@ -108,8 +108,6 @@ async function resolveGigs(
       venue: gig.venue,
       doors: gig.doors,
       music: gig.music,
-      tickets: gig.tickets,
-      ticketsAvailable: gig.ticketsAvailable,
       imagepath: gig.imagepath,
     }))
 }
