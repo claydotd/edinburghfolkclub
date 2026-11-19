@@ -14,8 +14,6 @@ const WHITE = '#ffffff'
 /** color-mix(in srgb, ink 72%, thistle) */
 const TEXT = '#321850'
 const HEATHER = '#b07dce'
-/** color-mix(in srgb, ink 38%, white) — matches .header-tagline */
-const TAGLINE = '#aaa6b2'
 /** color-mix(in srgb, yellow 25%, white) — matches --cream */
 const CREAM = '#fffbea'
 /** Match src/index.css --sans / --heading (fallbacks for clients without Typekit). */
@@ -191,32 +189,20 @@ function newsBodyToHtml(body: string): string {
   })
 }
 
-const HEADER_TAGLINE_STYLE = `margin:0;font-family:${FONT_HEADING};font-size:13px;font-weight:700;line-height:1.25;letter-spacing:-0.02em;color:${TAGLINE};`
-
 function emailHeaderHtml(homeUrl: string, logoUrl: string): string {
   return `
     <tr>
       <td style="padding:0;background:${WHITE};">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${WHITE};">
           <tr>
-            <td valign="middle" width="28%" align="right" style="padding:16px 10px 14px 18px;text-align:right;font-family:${FONT_HEADING};color:${TAGLINE};">
-              <p class="efc-heading" style="${HEADER_TAGLINE_STYLE}text-align:right;">
-                The home of traditional music in the capital since 1973
-              </p>
-            </td>
-            <td valign="middle" width="44%" align="center" style="padding:16px 8px 14px;">
+            <td align="center" style="padding:20px 18px 16px;">
               <a href="${escapeHtml(homeUrl)}" style="text-decoration:none;">
-                <img src="${escapeHtml(logoUrl)}" alt="Edinburgh Folk Club" width="200" style="display:block;width:200px;max-width:100%;height:auto;border:0;margin:0 auto;" />
+                <img src="${escapeHtml(logoUrl)}" alt="Edinburgh Folk Club" width="250" style="display:block;width:250px;max-width:100%;height:auto;border:0;margin:0 auto;" />
               </a>
-            </td>
-            <td valign="middle" width="28%" align="left" style="padding:16px 18px 14px 10px;text-align:left;font-family:${FONT_HEADING};color:${TAGLINE};">
-              <p class="efc-heading" style="${HEADER_TAGLINE_STYLE}text-align:left;">
-                Meetings at UCC<br />14 Royal Terrace EH7&nbsp;5AB
-              </p>
             </td>
           </tr>
           <tr>
-            <td colspan="3" style="height:8px;line-height:8px;font-size:0;background:${GOLD};">&nbsp;</td>
+            <td style="height:8px;line-height:8px;font-size:0;background:${GOLD};">&nbsp;</td>
           </tr>
         </table>
       </td>
@@ -276,9 +262,10 @@ function gigSectionHtml(gigs: NewsletterGigItem[], base: string): string {
   if (!gigs.length) return ''
   const items = gigs
     .map((gig) => {
+      // Stack image above details for all clients — media queries are unreliable in email.
       const imageSrc = gig.imagepath ? absoluteUrl(gig.imagepath, base) : ''
       const image = imageSrc
-        ? `<img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(gig.name)}" width="160" style="display:block;width:160px;max-width:100%;height:auto;border:0;border-radius:4px;" />`
+        ? `<img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(gig.name)}" width="280" style="display:block;width:280px;max-width:100%;height:auto;border:0;border-radius:4px;" />`
         : ''
       const metaBits = [
         gig.venue ? escapeHtml(gig.venue) : '',
@@ -297,13 +284,15 @@ function gigSectionHtml(gigs: NewsletterGigItem[], base: string): string {
         <tr>
           <td style="padding:0 0 24px;border-bottom:1px solid ${HEATHER};">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${
+                image
+                  ? `<tr>
+                <td style="padding:0 0 14px;">${image}</td>
+              </tr>`
+                  : ''
+              }
               <tr>
-                ${
-                  image
-                    ? `<td valign="top" width="172" style="padding:0 16px 0 0;">${image}</td>`
-                    : ''
-                }
-                <td valign="top" style="padding:0;">
+                <td style="padding:0;">
                   <p style="margin:0 0 4px;font-family:${FONT_SANS};font-size:13px;font-weight:bold;letter-spacing:0.04em;text-transform:uppercase;color:${THISTLE};">
                     ${escapeHtml(formatGigDate(gig.date))}
                   </p>
