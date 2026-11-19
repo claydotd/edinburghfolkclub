@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useMembership } from '../../membership/useMembership';
+import { isNewsDemo } from '../../news/api';
 import Reveal from '../../components/Reveal';
 
 export default function MembersGate() {
@@ -9,8 +10,9 @@ export default function MembersGate() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const defaultTab = isNewsDemo() ? '/members/documents' : '/members/tickets';
   const from =
-    (location.state as { from?: string } | null)?.from ?? '/members/documents';
+    (location.state as { from?: string } | null)?.from ?? defaultTab;
 
   if (!ready) {
     return (

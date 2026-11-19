@@ -18,8 +18,8 @@ export default function MembersLayout() {
         </button>
       </div>
       <nav className="members-nav" aria-label="Members">
-        <NavLink to="/members/documents">Documents</NavLink>
         {isNewsDemo() ? null : <NavLink to="/members/tickets">Tickets</NavLink>}
+        <NavLink to="/members/documents">Documents</NavLink>
         <NavLink to="/members/account">Account</NavLink>
       </nav>
       <Outlet />
